@@ -1,101 +1,160 @@
-import Image from "next/image";
+// vishva/page.tsx
+"use client";
+import React, { useState } from "react";
+import { Textarea, Button, Tooltip, Chip } from "@nextui-org/react";
+
+import SearchResults from "./SearchResults";
+import ChatWindow from "./chatComponents/chatWindow";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [query, setQuery] = useState(""); // State for query input
+  const [results, setResults] = useState([]); // State for search results
+  const [filters, setFilters] = useState<string[]>([]); // State for smart filters
+  const [loading, setLoading] = useState(false); // State to track loading
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [showChat, setShowChat] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+  const CX = process.env.NEXT_PUBLIC_GOOGLE_CX;
+
+  const handleSearch = async () => {
+    if (!query) return; // If search is empty, don't search
+    setLoading(true);
+    // Clear previous results immediately when a new search starts
+    setResults([]);
+    try {
+      // Fetch search results
+      const response = await fetch(
+        `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(query)}`,
+      );
+      const data = await response.json();
+      setResults(data.items || []); // Update state with search results
+
+      // Fetch smart filters
+      const filterResponse = await fetch("/api/filters", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }), // Send search query to API
+      });
+      const filterData = await filterResponse.json();
+      setFilters(filterData.filters || []); // Update state with smart filters
+    } catch (error) {
+      console.error("Error fetching search results or filters:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      handleSearch();
+    }
+  };
+
+  const handleChipClick = (filter: string) => {
+    if (selectedFilters.includes(filter)) {
+      // If the filter is already selected, deselect it
+      setSelectedFilters(selectedFilters.filter((f) => f !== filter));
+    } else {
+      // Otherwise, select the filter
+      setSelectedFilters([...selectedFilters, filter]);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen w-full">
+      <div
+        className={`transition-all duration-300 ${
+          showChat ? "w-1/2" : "mx-auto w-1/2"
+        }`}
+      >
+        <div className="flex h-full w-full flex-col items-start justify-center space-y-2 p-4 pl-8">
+          <div
+            className={`w-full ${showChat ? "flex items-center justify-between" : ""}`}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <h1
+              className={`font-bebas font-bold text-white ${
+                showChat ? "text-4xl" : "w-full text-center text-8xl"
+              }`}
+            >
+              VISHVA
+            </h1>
+            <p
+              className={`font-bebas text-gray-400 ${
+                showChat ? "text-xl" : "w-full text-center"
+              }`}
+            >
+              The modern Search Engine
+            </p>
+          </div>
+          <div className="w-full">
+            <Textarea
+              placeholder="Search through the vishva (Universe)..."
+              minRows={1}
+              maxRows={15}
+              variant="bordered"
+              size="lg"
+              className="w-full"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+            {/* Smart Filters */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {filters.map((filter, index) => (
+                <Chip
+                  key={index}
+                  color="warning"
+                  variant={selectedFilters.includes(filter) ? "faded" : "dot"}
+                  onClick={() => handleChipClick(filter)}
+                >
+                  {filter}
+                </Chip>
+              ))}
+            </div>
+
+            <div className="mt-4 flex w-full gap-2">
+              <Tooltip
+                content="Search like it's Google but see the magic"
+                placement="bottom"
+              >
+                <Button
+                  radius="sm"
+                  color="warning"
+                  size="sm"
+                  variant="shadow"
+                  isLoading={loading}
+                  spinnerPlacement="end"
+                  onClick={handleSearch}
+                  disabled={loading}
+                >
+                  {loading ? "Searching" : "Search ⌘ + Enter"}
+                </Button>
+              </Tooltip>
+              <Tooltip
+                content="Ask like it's ChatGPT (Coming soon)"
+                placement="bottom"
+              >
+                <Button radius="sm" color="danger" size="sm" variant="flat">
+                  Chat ⌥ + Enter
+                </Button>
+              </Tooltip>
+            </div>
+
+            <SearchResults
+              query={query}
+              results={results}
+              loading={loading}
+              showChat={showChat}
+              setShowChat={setShowChat}
+            />
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
-}
+};
+
