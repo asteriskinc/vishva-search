@@ -79,91 +79,99 @@ const CardRSC: React.FC<CardRSCProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="flex flex-nowrap">
-        {/* Website Image */}
-        <div className="mr-2 flex-shrink-0">
-          <Image
-            isBlurred
-            src={imageUrl}
-            alt={`${websiteName} thumbnail`}
-            width={60}
-            height={60}
-            className="rounded-md object-cover"
-            loading="lazy"
-          />
+      <div className="flex flex-col">
+        {/* Top section with image and content */}
+        <div className="flex flex-nowrap mb-2">
+          {/* Website Image */}
+          <div className="mr-2 flex-shrink-0">
+            <Image
+              isBlurred
+              src={imageUrl}
+              alt={`${websiteName} thumbnail`}
+              width={60}
+              height={60}
+              className="rounded-md object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          {/* Content */}
+          <div className="min-w-0 flex-grow">
+            <h2 className="mb-1 truncate text-xl font-bold text-blue-400">
+              {title}
+            </h2>
+            <p className="mb-1 truncate text-sm text-gray-400">{websiteName}</p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-2 block truncate text-sm text-blue-500 hover:underline"
+            >
+              {url}
+            </a>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="min-w-0 flex-grow">
-          <h2 className="mb-1 truncate text-xl font-bold text-blue-400">
-            {title}
-          </h2>
-          <p className="mb-1 truncate text-sm text-gray-400">{websiteName}</p>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-2 block truncate text-sm text-blue-500 hover:underline"
-          >
-            {url}
-          </a>
-
-          {/* Expandable content with dynamic height */}
-          <div
-            className={`text-gray-300 transition-all duration-300 ease-in-out ${
-              isHovered ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-            } overflow-hidden`}
-          >
-            {videoId && isHovered ? (
-              <YouTubePreview videoId={videoId} />
-            ) : (
-              <>
-                {loadingSummary || summary ? (
-                  <div className="w-full max-w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="bg-gradient-to-r from-yellow-400 to-red-800 bg-clip-text text-lg font-bold text-transparent">
-                        Intent Based Summary
-                      </p>
-                      <Button
-                        color="success"
-                        variant="shadow"
-                        size="sm"
-                        onClick={handlePeekFurther}
-                      >
-                        Explore
-                      </Button>
-                    </div>
-
-                    <div className="mt-2 overflow-hidden rounded-lg border border-white/40 bg-transparent p-2">
-                      {summary ? (
-                        <ReactMarkdown
-                          rehypePlugins={[
-                            rehypeRaw,
-                            rehypeSanitize,
-                            rehypeHighlight,
-                          ]}
-                          className="markdown-content break-words"
-                        >
-                          {summary}
-                        </ReactMarkdown>
-                      ) : (
-                        <PulseDiv duration={1.5} easing="easeInOut">
-                          <div className="flex items-center justify-center space-x-2">
-                            <GridLoader
-                              aria-label="Loading Spinner"
-                              color="#ffffff"
-                              size={4}
-                            />
-                            <div className="text-lg font-bold">Thinking</div>
-                          </div>
-                        </PulseDiv>
-                      )}
-                    </div>
+        {/* Expandable content with dynamic height - Full width */}
+        <div
+          className={`w-full text-gray-300 transition-all duration-300 ease-in-out ${
+            isHovered ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+          } overflow-hidden`}
+        >
+          {videoId && isHovered ? (
+            <YouTubePreview videoId={videoId} />
+          ) : (
+            <>
+              {loadingSummary || summary ? (
+                <div className="w-full max-w-full">
+                  <div className="flex items-center justify-between">
+                    <p className="bg-gradient-to-r from-yellow-400 to-red-800 bg-clip-text text-lg font-bold text-transparent">
+                      Intent Based Summary
+                    </p>
+                    <Button
+                      color="success"
+                      variant="shadow"
+                      size="sm"
+                      onClick={handlePeekFurther}
+                    >
+                      Explore
+                    </Button>
                   </div>
-                ) : null}
-              </>
-            )}
-          </div>
+
+                  <div className="mt-2 overflow-hidden rounded-lg border border-white/40 bg-transparent p-2">
+                    {summary ? (
+                      <ReactMarkdown
+                        rehypePlugins={[
+                          rehypeRaw,
+                          rehypeSanitize,
+                          rehypeHighlight,
+                        ]}
+                        components={{
+                          ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                          li: ({node, ...props}) => <li className="mb-2" {...props} />,
+                        }}
+                        className="markdown-content break-words"
+                      >
+                        {summary}
+                      </ReactMarkdown>
+                    ) : (
+                      <PulseDiv duration={1.5} easing="easeInOut">
+                        <div className="flex items-center justify-center space-x-2">
+                          <GridLoader
+                            aria-label="Loading Spinner"
+                            color="#ffffff"
+                            size={4}
+                          />
+                          <div className="text-lg font-bold">Thinking</div>
+                        </div>
+                      </PulseDiv>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     </div>
