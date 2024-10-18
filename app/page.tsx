@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Textarea, Button, Tooltip, Chip } from "@nextui-org/react";
 
 import SearchResults from "./SearchResults";
-import ChatWindow from "./chatComponents/chatWindow";
 
 export default function Home() {
   const [query, setQuery] = useState(""); // State for query input

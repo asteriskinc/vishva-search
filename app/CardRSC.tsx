@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Button, Image } from "@nextui-org/react";
 import YouTubePreview from "./YouTubePreview";
 import ReactMarkdown from "react-markdown";
@@ -9,6 +9,8 @@ import { readStreamableValue } from "ai/rsc";
 import { generate } from "@/utils/openaiStream";
 import PulseDiv from "./PulseDiv";
 import GridLoader from "react-spinners/GridLoader";
+import { calculateRelevance, calculateTrustworthiness } from "@/utils/scoreCalculator";
+import ScoreCard from "./ScoreCard";
 
 interface CardRSCProps {
   query: string;
@@ -174,6 +176,8 @@ const CardRSC: React.FC<CardRSCProps> = ({
           )}
         </div>
       </div>
+
+      {/* The score card component */}    
     </div>
   );
 };
