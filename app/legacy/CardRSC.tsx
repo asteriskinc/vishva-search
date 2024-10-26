@@ -9,8 +9,6 @@ import { readStreamableValue } from "ai/rsc";
 import { generate } from "@/utils/openaiStream";
 import PulseDiv from "../framerCustomDivs/PulseDiv";
 import GridLoader from "react-spinners/GridLoader";
-import { calculateRelevance, calculateTrustworthiness } from "@/utils/scoreCalculator";
-import ScoreCard from "./ScoreCard";
 
 interface CardRSCProps {
   query: string;
