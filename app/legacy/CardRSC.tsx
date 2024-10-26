@@ -1,16 +1,16 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Button, Image } from "@nextui-org/react";
-import YouTubePreview from "./YouTubePreview";
+import YouTubePreview from "../components/YouTubePreview";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import { readStreamableValue } from "ai/rsc";
 import { generate } from "@/utils/openaiStream";
-import PulseDiv from "./PulseDiv";
+import PulseDiv from "../framerCustomDivs/PulseDiv";
 import GridLoader from "react-spinners/GridLoader";
 import { calculateRelevance, calculateTrustworthiness } from "@/utils/scoreCalculator";
-import ScoreCard from "./ScoreCard";
+import ScoreCard from "../ScoreCard";
 
 interface CardRSCProps {
   query: string;

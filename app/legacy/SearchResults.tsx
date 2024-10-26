@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import CardRSC from "./CardRSC";
+import CardRSC from "./legacy/CardRSC";
 import ChatWindow from "./chatComponents/chatWindow";
 
 interface SearchResultProps {

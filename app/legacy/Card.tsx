@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Skeleton } from "@nextui-org/react";
 import ImageGrid from "./ImageGrid";
-import YouTubePreview from "./YouTubePreview"; // Import the new YouTubePreview component
+import YouTubePreview from "./components/YouTubePreview"; // Import the new YouTubePreview component
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
