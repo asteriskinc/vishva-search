@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardBody, Skeleton, Chip } from "@nextui-org/react";
 import { Clock, BarChart2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeHighlight from "rehype-highlight";
+import { readStreamableValue } from "ai/rsc";
+import { generate } from "@/utils/openaiStream";
 
 type ContentType = "Blog Post" | "Academic" | "News" | "Landing Page" | "Documentation";
 
@@ -15,6 +21,10 @@ interface ContentAnalysisCardProps {
   isHovered?: boolean;
   /** Optional CSS classes to override default styling */
   className?: string;
+  /** URL of the content to analyze */
+  url: string;
+  /** Search query for context */
+  query: string;
 }
 
 const ContentAnalysisCard: React.FC<ContentAnalysisCardProps> = ({
@@ -22,8 +32,14 @@ const ContentAnalysisCard: React.FC<ContentAnalysisCardProps> = ({
   lastUpdated = "2 days ago",
   wordCount = "1,200",
   isHovered = false,
-  className = ""
+  className = "",
+  url,
+  query
 }) => {
+  const [summary, setSummary] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const hasStartedStreaming = useRef(false);
+
   const getChipColor = (type: ContentType): "warning" | "primary" | "success" | "secondary" | "danger" => {
     const colors: Record<ContentType, "warning" | "primary" | "success" | "secondary" | "danger"> = {
       "Blog Post": "secondary",
@@ -34,6 +50,41 @@ const ContentAnalysisCard: React.FC<ContentAnalysisCardProps> = ({
     };
     return colors[type] || "secondary";
   };
+
+  const fetchStreamingSummary = useCallback(async () => {
+    if (hasStartedStreaming.current) return;
+    
+    setIsLoading(true);
+    setSummary("");
+    hasStartedStreaming.current = true;
+
+    try {
+      const { output } = await generate(query, url);
+      
+      // Process the stream
+      for await (const delta of readStreamableValue(output)) {
+        setSummary(prev => prev + delta);
+      }
+    } catch (error) {
+      console.error("Error fetching streaming summary:", error);
+      setSummary("Failed to generate summary.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query, url]);
+
+  useEffect(() => {
+    if (isHovered && !hasStartedStreaming.current) {
+      fetchStreamingSummary();
+    }
+  }, [isHovered, fetchStreamingSummary]);
+
+  // Reset streaming state when URL changes
+  useEffect(() => {
+    hasStartedStreaming.current = false;
+    setSummary("");
+    setIsLoading(false);
+  }, [url]);
 
   return (
     <div 
@@ -69,62 +120,37 @@ const ContentAnalysisCard: React.FC<ContentAnalysisCardProps> = ({
           </div>
 
           <div className="space-y-3">
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-full"></div>
-            </Skeleton>
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-5/6"></div>
-            </Skeleton>
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-4/5"></div>
-            </Skeleton>
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-5/6"></div>
-            </Skeleton>
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-4/5"></div>
-            </Skeleton> 
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-5/6"></div>
-            </Skeleton>
-            <Skeleton 
-              className="rounded-lg"
-              classNames={{
-                base: "bg-default-200",
-              }}
-            >
-              <div className="h-3 w-4/5"></div>
-            </Skeleton>
+            {isLoading && !summary ? (
+              // Show skeletons only when loading and no summary yet
+              <>
+                {[...Array(7)].map((_, index) => (
+                  <Skeleton 
+                    key={index}
+                    className="rounded-lg"
+                    classNames={{
+                      base: "bg-default-200",
+                    }}
+                  >
+                    <div className="h-3 w-full"></div>
+                  </Skeleton>
+                ))}
+              </>
+            ) : (
+              // Show the streaming summary
+              <div className="text-sm text-gray-300">
+                <ReactMarkdown
+                  rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
+                  components={{
+                    ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                    li: ({node, ...props}) => <li className="mb-2" {...props} />,
+                  }}
+                  className="markdown-content break-words"
+                >
+                  {summary || 'Generating summary...'}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         </CardBody>
       </Card>

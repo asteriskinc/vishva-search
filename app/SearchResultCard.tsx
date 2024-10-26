@@ -7,12 +7,52 @@ import AuthorityMetricsCard from "./components/AuthorityMetricsCard";
 import ResourceAvailabilityCard from "./components/ResourcesAvailabiltyCard";
 import RelevanceTruthCard from "./components/RelevanceTruthCard";
 
-const SearchResultCard = ({
+
+interface SearchResultCardProps {
+  title: string;
+  displayLink: string;
+  link: string;
+  snippet: string;
+  imageUrl: string;
+  query: string; // Add query prop
+  contentType?: string;
+  wordCount?: string;
+  lastUpdated?: string;
+  authorityMetrics?: {
+    domainAuthority: number;
+    citations: number;
+    expertVerified: boolean;
+    socialShares: number;
+    academicReferences: number;
+  };
+  resources?: {
+    videos: { count: number };
+    tools: { count: number };
+    downloads: { count: number; totalSize: number };
+    codeSnippets: { count: number };
+  };
+  relevanceMetrics?: {
+    relevanceScore: number;
+    truthScore: number;
+    biasLevel: number;
+    factChecks: number;
+    author: {
+      name: string;
+      credentials: string;
+      affiliation: string;
+      imageUrl: string;
+      verificationStatus: string;
+    };
+  };
+}
+
+const SearchResultCard: React.FC<SearchResultCardProps> = ({
   title,
   displayLink,
   link,
   snippet,
   imageUrl,
+  query,
   contentType = "Blog Post",
   wordCount = "1,200",
   lastUpdated = "2 days ago",
@@ -103,6 +143,8 @@ const SearchResultCard = ({
           lastUpdated={lastUpdated}
           wordCount={wordCount}
           isHovered={isHovered}
+          query={query}
+          url={link}
         />
 
         {/* Relevance Truth Card - 23% */}
