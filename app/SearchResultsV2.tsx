@@ -42,14 +42,6 @@ const SearchResultsV2: React.FC<SearchResultV2Props> = ({
     );
   }
 
-  if (results.length === 0) {
-    return (
-      <div className="w-full text-center p-8 text-gray-400">
-        No results found for "{query}"
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full space-y-4 pt-4">
       {results.map((result, index) => (
@@ -60,6 +52,7 @@ const SearchResultsV2: React.FC<SearchResultV2Props> = ({
           link={result.link}
           snippet={result.snippet}
           imageUrl={getImageUrl(result)}
+          query={query}
         />
       ))}
     </div>
