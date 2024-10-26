@@ -2,10 +2,10 @@
 import React, { useState } from "react";
 import { Card, CardBody, Image, Skeleton, Badge } from "@nextui-org/react";
 import { Clock, Users, Award, ExternalLink, BarChart2 } from "lucide-react";
-import ContentAnalysisCard from "./ContentAnalysisCard";
-import AuthorityMetricsCard from "./AuthorityMetricsCard";
-import ResourceAvailabilityCard from "./ResourcesAvailabiltyCard";
-import RelevanceTruthCard from "./RelevanceTruthCard";
+import ContentAnalysisCard from "./components/ContentAnalysisCard";
+import AuthorityMetricsCard from "./components/AuthorityMetricsCard";
+import ResourceAvailabilityCard from "./components/ResourcesAvailabiltyCard";
+import RelevanceTruthCard from "./components/RelevanceTruthCard";
 
 const SearchResultCard = ({
   title,
