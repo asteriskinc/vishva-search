@@ -93,6 +93,38 @@ const ContentAnalysisCard: React.FC<ContentAnalysisCardProps> = ({
             >
               <div className="h-3 w-4/5"></div>
             </Skeleton>
+            <Skeleton 
+              className="rounded-lg"
+              classNames={{
+                base: "bg-default-200",
+              }}
+            >
+              <div className="h-3 w-5/6"></div>
+            </Skeleton>
+            <Skeleton 
+              className="rounded-lg"
+              classNames={{
+                base: "bg-default-200",
+              }}
+            >
+              <div className="h-3 w-4/5"></div>
+            </Skeleton> 
+            <Skeleton 
+              className="rounded-lg"
+              classNames={{
+                base: "bg-default-200",
+              }}
+            >
+              <div className="h-3 w-5/6"></div>
+            </Skeleton>
+            <Skeleton 
+              className="rounded-lg"
+              classNames={{
+                base: "bg-default-200",
+              }}
+            >
+              <div className="h-3 w-4/5"></div>
+            </Skeleton>
           </div>
         </CardBody>
       </Card>

@@ -48,7 +48,7 @@ const ResourceAvailabilityCard: React.FC<ResourceAvailabilityCardProps> = ({
 
   return (
     <div 
-      className={`absolute left-[46%] w-[30%] top-full mt-4 transition-all duration-300 ${
+      className={`absolute left-[62%] -top-[148%] w-[30%] mt-4 transition-all duration-300 ${
         isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
       } ${className}`}
     >
