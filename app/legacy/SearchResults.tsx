@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import CardRSC from "./legacy/CardRSC";
-import ChatWindow from "./chatComponents/chatWindow";
+import CardRSC from "./CardRSC";
+import ChatWindow from "../chatComponents/chatWindow";
 
 interface SearchResultProps {
   query: string;
