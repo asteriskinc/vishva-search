@@ -68,7 +68,7 @@ export default function Home() {
                 VISHVA
               </h1>
               <p className="text-sm font-bebas text-gray-400">
-                The modern Search Engine
+                The Modern Search Engine
               </p>
             </div>
             
