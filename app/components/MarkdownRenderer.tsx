@@ -7,6 +7,21 @@ import { Link } from "@nextui-org/link";
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@nextui-org/table";
 
 const MarkdownRenderer = ({ content }) => {
+  const getMarkdownContent = () => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    if (content && typeof content === 'object') {
+      if ('markdown' in content) {
+        return content.markdown;
+      }
+      return JSON.stringify(content);
+    }
+    
+    return '';
+  };
+
   const components = {
     // Headers with custom styling
     h1: ({ children }) => (
@@ -142,7 +157,7 @@ const MarkdownRenderer = ({ content }) => {
   return (
     <div className="prose dark:prose-invert max-w-none">
       <ReactMarkdown components={components}>
-        {content}
+        {getMarkdownContent()}
       </ReactMarkdown>
     </div>
   );
