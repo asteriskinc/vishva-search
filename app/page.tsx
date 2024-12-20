@@ -37,11 +37,11 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 -mt-20">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen -mt-20">
         {/* Title Section */}
-        <div className="text-center mb-8">
-          <p className="text-2xl font-bold text-gray-200 mb-2">INTRODUCING</p>
-          <h1 className="text-[100px] font-bold bg-gradient-to-r from-indigo-700 via-purple-600 to-amber-400 bg-clip-text text-transparent">
+        <div className="text-center">
+          <p className="text-2xl font-bold text-white/70">INTRODUCING</p>
+          <h1 className="mb-2 text-8xl font-bold bg-gradient-to-r from-indigo-700 via-purple-600 to-amber-400 bg-clip-text text-transparent">
             VISHVA
           </h1>
         </div>
