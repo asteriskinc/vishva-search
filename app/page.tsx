@@ -1,205 +1,112 @@
 "use client"
-import React, { useState } from "react";
-import { Textarea, Button, Tooltip, Chip } from "@nextui-org/react";
-import SearchResultsV2 from "./SearchResultsV2";
+import React from "react";
+import { Input, Button } from "@nextui-org/react";
+import { Search, Settings, Compass, Zap, Info, Send, UserPlus } from "lucide-react";
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [filters, setFilters] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [showChat, setShowChat] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-
-  const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-  const CX = process.env.NEXT_PUBLIC_GOOGLE_CX;
-
-  const handleSearch = async () => {
-    if (!query) return;
-    setLoading(true);
-    setResults([]);
-    setHasSearched(true);
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(query)}`,
-      );
-      const data = await response.json();
-      setResults(data.items || []);
-
-      const filterResponse = await fetch("/api/filters", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query }),
-      });
-      const filterData = await filterResponse.json();
-      setFilters(filterData.filters || []);
-    } catch (error) {
-      console.error("Error fetching search results or filters:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      handleSearch();
-    }
-  };
-
-  const handleChipClick = (filter: string) => {
-    if (selectedFilters.includes(filter)) {
-      setSelectedFilters(selectedFilters.filter((f) => f !== filter));
-    } else {
-      setSelectedFilters([...selectedFilters, filter]);
-    }
-  };
-
-  if (hasSearched) {
-    return (
-      <div className="flex min-h-screen w-full flex-col">
-        {/* Top search bar layout */}
-        <div className="w-[45%] pl-4 py-4">
-          <div className=" mx-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-4xl font-bebas font-bold text-white">
-                VISHVA
-              </h1>
-              <p className="text-sm font-bebas text-gray-400">
-                The Modern Search Engine
-              </p>
-            </div>
-            
-            <div className="w-full">
-              <Textarea
-                placeholder="Search through the vishva (Universe)..."
-                minRows={1}
-                maxRows={15}
-                variant="bordered"
-                size="lg"
-                className=""
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {filters.map((filter, index) => (
-                  <Chip
-                    key={index}
-                    color="warning"
-                    variant={selectedFilters.includes(filter) ? "faded" : "dot"}
-                    onClick={() => handleChipClick(filter)}
-                  >
-                    {filter}
-                  </Chip>
-                ))}
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Tooltip
-                  content="Search like it's Google but see the magic"
-                  placement="bottom"
-                >
-                  <Button
-                    radius="sm"
-                    color="warning"
-                    size="sm"
-                    variant="shadow"
-                    isLoading={loading}
-                    spinnerPlacement="end"
-                    onClick={handleSearch}
-                    disabled={loading}
-                  >
-                    {loading ? "Searching" : "Search ⌘ + Enter"}
-                  </Button>
-                </Tooltip>
-                <Tooltip
-                  content="Ask like it's ChatGPT (Coming soon)"
-                  placement="bottom"
-                >
-                  <Button radius="sm" color="danger" size="sm" variant="flat">
-                    Chat ⌥ + Enter
-                  </Button>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search Results */}
-        <div className="w-full px-4">
-          <SearchResultsV2
-            query={query}
-            results={results}
-            loading={loading}
-            showChat={showChat}
-            setShowChat={setShowChat}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      {/* Centered initial layout */}
-      <div className="mx-auto w-[40%] px-4 pt-8 mt-[30vh]">
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <div className="w-full text-center">
-            <h1 className="text-8xl font-bebas font-bold text-white">
-              VISHVA
-            </h1>
-            <p className="font-bebas text-gray-400">
-              The modern Search Engine
-            </p>
-          </div>
-          
-          <div className="w-full">
-            <Textarea
-              placeholder="Search through the vishva (Universe)..."
-              minRows={1}
-              maxRows={15}
-              variant="bordered"
-              size="lg"
-              className="w-full"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
+    <main className="relative min-h-screen">
+      <div className="fixed inset-0">
+        <video
+          muted
+          autoPlay
+          loop
+          playsInline
+          preload="auto"
+          className="h-full w-full object-cover"
+        >
+          <source src="/background_1.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
 
-            <div className="mt-4 flex w-full gap-2">
-              <Tooltip
-                content="Search like it's Google but see the magic"
-                placement="bottom"
-              >
+      {/* Sign Up Button */}
+      <div className="relative z-10 flex justify-end p-6">
+        <Button
+          isIconOnly
+          className="w-10 h-10 backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+          aria-label="Sign Up"
+          variant="flat"
+          radius="lg"
+        >
+          <UserPlus className="text-white/90" size={20} />
+        </Button>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 -mt-20">
+        {/* Title Section */}
+        <div className="text-center mb-8">
+          <p className="text-2xl font-bold text-gray-200 mb-2">INTRODUCING</p>
+          <h1 className="text-8xl font-bold bg-gradient-to-r from-indigo-700 via-violet-700 to-orange-400 bg-clip-text text-transparent">
+            VISHVA
+          </h1>
+        </div>
+
+        {/* Search Bar Section */}
+        <div className="w-full max-w-3xl">
+          <div className="backdrop-blur-md bg-white/5 dark:bg-gray-900/20 rounded-3xl p-6 shadow-lg border border-white/10">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <Input
+                  type="text"
+                  placeholder="What would you like me to help you with?"
+                  classNames={{
+                    input: "bg-transparent text-white placeholder:text-gray-300",
+                    inputWrapper: "bg-white/5 dark:bg-gray-900/20 border-white/10 hover:bg-white/10",
+                    base: "h-12"
+                  }}
+                  startContent={<Search className="text-gray-300" size={20} />}
+                  size="lg"
+                />
                 <Button
+                  isIconOnly
+                  className="h-12 w-12 backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                  aria-label="Send"
+                  variant="flat"
                   radius="sm"
-                  color="warning"
-                  size="sm"
-                  variant="shadow"
-                  isLoading={loading}
-                  spinnerPlacement="end"
-                  onClick={handleSearch}
-                  disabled={loading}
                 >
-                  {loading ? "Searching" : "Search ⌘ + Enter"}
+                  <Send className="text-white/90" size={20} />
                 </Button>
-              </Tooltip>
-              <Tooltip
-                content="Ask like it's ChatGPT (Coming soon)"
-                placement="bottom"
-              >
-                <Button radius="sm" color="danger" size="sm" variant="flat">
-                  Chat ⌥ + Enter
+              </div>
+              
+              {/* Action Buttons inside search component */}
+              <div className="flex justify-start gap-4 mt-2 ml-2">
+                <Button
+                  isIconOnly
+                  className="w-10 h-10 backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                  aria-label="Explore"
+                  variant="flat"
+                  radius="lg"
+                >
+                  <Compass className="text-indigo-400" size={20} />
                 </Button>
-              </Tooltip>
+                <Button
+                  isIconOnly
+                  className="w-10 h-10 backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                  aria-label="Quick Tasks"
+                  variant="flat"
+                  radius="lg"
+                >
+                  <Zap className="text-indigo-400" size={20} />
+                </Button>
+                <Button
+                  isIconOnly
+                  className="w-10 h-10 backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                  aria-label="Settings"
+                  variant="flat"
+                  radius="lg"
+                >
+                  <Settings className="text-indigo-400" size={20} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

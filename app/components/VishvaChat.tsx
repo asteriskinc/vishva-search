@@ -10,16 +10,33 @@ import { Spinner } from "@nextui-org/spinner";
 import { Code } from "@nextui-org/code";
 import MarkdownRenderer from './MarkdownRenderer';
 
+interface SystemEvent {
+  type: 'tool_call' | 'agent_switch' | 'agent_start';
+  agent: string;
+  data?: any;
+  id: number;
+}
+
+interface ChatMessage {
+  type: 'user_message' | 'agent_content' | 'error';
+  content?: string;
+  agent?: string;
+  timestamp: number;
+  data?: {
+    message?: string;
+  };
+}
+
 const VishvaChat = () => {
-  const [messages, setMessages] = useState([]);
-  const [systemEvents, setSystemEvents] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [systemEvents, setSystemEvents] = useState<SystemEvent[]>([]);
   const [input, setInput] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const ws = useRef(null);
-  const chatBottomRef = useRef(null);
-  const eventsBottomRef = useRef(null);
-  const currentAgentRef = useRef(null);
+  const ws = useRef<WebSocket | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const eventsBottomRef = useRef<HTMLDivElement>(null);
+  const currentAgentRef = useRef<string | null>(null);
 
   useEffect(() => {
     connectWebSocket();
@@ -106,6 +123,7 @@ const VishvaChat = () => {
     if (!input.trim() || !isConnected) return;
 
     if (input.toLowerCase() === 'clear') {
+      if (!ws.current) return;
       ws.current.send(JSON.stringify({ action: "clear_history" }));
       setMessages([]);
       setSystemEvents([]);
@@ -119,6 +137,7 @@ const VishvaChat = () => {
       query: input
     };
 
+    if (!ws.current) return;
     ws.current.send(JSON.stringify(message));
     setMessages(prev => [...prev, {
       type: 'user_message',
@@ -129,7 +148,7 @@ const VishvaChat = () => {
     setIsProcessing(true);
   };
 
-  const renderMessage = (message, index) => {
+  const renderMessage = (message: ChatMessage, index: number) => {
     const getTime = (timestamp) => {
       return new Date(timestamp * 1000).toLocaleTimeString();
     };
