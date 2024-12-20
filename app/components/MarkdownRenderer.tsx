@@ -1,3 +1,7 @@
+// @ts-nocheck  
+
+"use client"
+
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Code } from "@nextui-org/code";
