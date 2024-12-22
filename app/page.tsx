@@ -4,13 +4,23 @@ import { useState } from "react";
 import { SearchBar } from "@/app/componentsV2/SearchBar";
 import TaskList from "@/app/componentsV2/TaskList";
 import { motion, AnimatePresence } from "framer-motion";
+import { TaskResponse } from "@/app/api/process-query/route";
 
 export default function Home() {
   const [isSearching, setIsSearching] = useState(true);
+  const [tasks, setTasks] = useState<TaskResponse[]>([]);
   
-  const handleSearch = (query: string) => {
+  const handleSearch = (task: TaskResponse) => {
+    setTasks(currentTasks => [task, ...currentTasks]);
     setIsSearching(false);
-    // Here you would typically trigger your task creation logic
+  };
+
+  const handleTaskUpdate = (updatedTask: TaskResponse) => {
+    setTasks(currentTasks => 
+      currentTasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      )
+    );
   };
 
   return (
@@ -62,7 +72,7 @@ export default function Home() {
 
       {/* Task List Container with Backdrop Blur */}
       <AnimatePresence>
-        {!isSearching && (
+        {!isSearching && tasks.length > 0 && (
           <motion.div 
             className="fixed left-0 right-0 top-0 pt-8 px-4 pb-32 overflow-y-auto max-h-screen"
             initial={{ opacity: 0, y: -20 }}
@@ -70,7 +80,10 @@ export default function Home() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <TaskList />
+            <TaskList 
+              tasks={tasks}
+              onTaskUpdate={handleTaskUpdate}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -91,6 +104,22 @@ export default function Home() {
       >
         <SearchBar onSearch={handleSearch} />
       </motion.div>
+
+      {/* Return to Search Button */}
+      <AnimatePresence>
+        {!isSearching && (
+          <motion.button
+            className="fixed top-4 right-4 backdrop-blur-xl bg-white/10 border border-white/20 text-white/60 
+                     px-4 py-2 rounded-lg hover:bg-white/20 transition-colors"
+            onClick={() => setIsSearching(true)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            New Search
+          </motion.button>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

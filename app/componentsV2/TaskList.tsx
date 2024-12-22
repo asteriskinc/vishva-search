@@ -1,88 +1,40 @@
-import { useState } from 'react';
+"use client"
+import { useState, useEffect } from 'react';
 import { Button, Input, Checkbox } from "@nextui-org/react";
 import { MapPin, Building2, Timer, Navigation, ShoppingCart, Briefcase, CreditCard, 
-  Car, Search, Settings2, Plus, Clock, Bot, ChevronDown, ChevronRight, Ticket, 
-  AlertCircle, CheckCircle2 } from "lucide-react";
+  Car, Search, Settings2, Plus, Clock, Bot, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { TaskResponse, SubTask } from '@/app/api/process-query/route';
 
-interface Subtask {
-  title: string;
-  status: 'pending' | 'active' | 'complete';
-  agent: string;
-  detail: string;
-  icon?: any;
-  category: 1 | 2;  // 1: Direct, 2: Optional
-  approved?: boolean;
-  userContext?: string;
+const ICON_MAP: { [key: string]: any } = {
+  MapPin,
+  Building2,
+  Timer,
+  Navigation,
+  ShoppingCart,
+  Briefcase,
+  CreditCard,
+  Car,
+  Search,
+  Bot
+};
+
+interface TaskListProps {
+  tasks?: TaskResponse[];
+  onTaskUpdate?: (updatedTask: TaskResponse) => void;
 }
 
-interface Task {
-  id: string;
-  query: string;
-  timestamp: string;
-  domain: string;
-  needsClarification: boolean;
-  clarificationPrompt?: string;
-  clarificationResponse?: string;
-  subtasks: Subtask[];
-}
-
-const TaskList = () => {
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(["1"]));
-  const [editingSubtask, setEditingSubtask] = useState<{ taskId: string, subtaskIndex: number } | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      query: "Find IMAX tickets for Dune Part Two tonight, preferably after 7 PM",
-      timestamp: "Just now",
-      domain: "Entertainment",
-      needsClarification: true,
-      clarificationPrompt: "Do you have any seating preferences (front/middle/back)?",
-      subtasks: [
-        {
-          title: "Location Detection",
-          status: "complete",
-          agent: "Location Agent",
-          detail: "Identified current location and nearest IMAX theaters",
-          icon: MapPin,
-          category: 1
-        },
-        {
-          title: "Theater Research",
-          status: "complete",
-          agent: "Search Agent",
-          detail: "Found 3 IMAX theaters within 15 miles showing Dune Part Two",
-          icon: Building2,
-          category: 1
-        },
-        {
-          title: "Showtime Analysis",
-          status: "active",
-          agent: "Scheduling Agent",
-          detail: "Comparing available slots after 7 PM across theaters",
-          icon: Timer,
-          category: 1
-        },
-        {
-          title: "Parking Information",
-          status: "pending",
-          agent: "Navigation Agent",
-          detail: "Would you like me to check parking availability and rates at the selected theater?",
-          icon: Car,
-          category: 2,
-          approved: false
-        },
-        {
-          title: "Dinner Recommendations",
-          status: "pending",
-          agent: "Concierge Agent",
-          detail: "Should I find nearby restaurants for pre/post movie dining?",
-          icon: ShoppingCart,
-          category: 2,
-          approved: false
-        }
-      ]
+const TaskList = ({ tasks = [], onTaskUpdate }: TaskListProps) => {
+  // Add useEffect import at the top if not already present
+  useEffect(() => {
+    if (tasks.length > 0) {
+      setExpandedTasks(prev => new Set([tasks[0].id, ...prev]));
     }
-  ]);
+  }, [tasks.length]);
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(() => {
+    // Initialize with the most recent task ID if tasks exist
+    return new Set(tasks.length > 0 ? [tasks[0].id] : []);
+  });
+  const [editingSubtask, setEditingSubtask] = useState<{ taskId: string, subtaskIndex: number } | null>(null);
 
   const toggleTask = (taskId: string) => {
     const newExpanded = new Set(expandedTasks);
@@ -95,15 +47,16 @@ const TaskList = () => {
   };
 
   const handleClarificationSubmit = (taskId: string, response: string) => {
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === taskId 
-        ? { ...task, clarificationResponse: response, needsClarification: false }
+        ? { ...task, needsClarification: false, clarificationResponse: response }
         : task
-    ));
+    );
+    onTaskUpdate?.(updatedTasks.find(t => t.id === taskId)!);
   };
 
   const toggleSubtaskApproval = (taskId: string, subtaskIndex: number) => {
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === taskId 
         ? {
             ...task,
@@ -114,15 +67,12 @@ const TaskList = () => {
             )
           }
         : task
-    ));
-  };
-
-  const startEditingSubtask = (taskId: string, subtaskIndex: number) => {
-    setEditingSubtask({ taskId, subtaskIndex });
+    );
+    onTaskUpdate?.(updatedTasks.find(t => t.id === taskId)!);
   };
 
   const handleSubtaskContextSubmit = (taskId: string, subtaskIndex: number, context: string) => {
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === taskId 
         ? {
             ...task,
@@ -131,14 +81,125 @@ const TaskList = () => {
                 ? { 
                     ...subtask, 
                     userContext: context,
-                    status: 'pending' // Reset status to trigger re-execution
+                    status: 'pending'
                   }
                 : subtask
             )
           }
         : task
-    ));
+    );
+    onTaskUpdate?.(updatedTasks.find(t => t.id === taskId)!);
     setEditingSubtask(null);
+  };
+
+  const renderSubtask = (subtask: SubTask, taskId: string, index: number) => {
+    const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
+
+    return (
+      <div key={index}>
+        <div className={`backdrop-blur-xl rounded-lg transition-colors ${
+          subtask.category === 2 
+            ? 'bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20' 
+            : 'bg-white/5 hover:bg-white/10 border border-blue-500/20'
+        }`}>
+          <div className="flex gap-3 p-3">
+            {subtask.category === 2 && (
+              <div className="flex items-start pt-1">
+                <Checkbox
+                  isSelected={subtask.approved || false}
+                  onValueChange={() => toggleSubtaskApproval(taskId, index)}
+                  classNames={{
+                    wrapper: "before:border-amber-500/40",
+                    label: "text-white/90"
+                  }}
+                />
+              </div>
+            )}
+            <div className="mt-1">
+              <IconComponent className={`w-5 h-5 ${
+                subtask.category === 2 ? 'text-amber-400' : 'text-blue-400'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/90">{subtask.title}</span>
+                  {subtask.category === 1 && (
+                    <div className={`w-2 h-2 rounded-full ${
+                      subtask.status === 'complete' ? 'bg-green-400' :
+                      subtask.status === 'active' ? 'bg-blue-400' :
+                      'bg-white/30'
+                    }`} />
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className="backdrop-blur-xl bg-white/5 border border-white/20 text-white/60 w-8 h-8 min-w-0 p-0"
+                  onClick={() => setEditingSubtask({ taskId, subtaskIndex: index })}
+                >
+                  <Settings2 className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className={`text-sm mt-1 ${
+                subtask.category === 2 ? 'text-amber-100/80' : 'text-white/60'
+              }`}>
+                {subtask.detail}
+              </div>
+              {subtask.userContext && (
+                <div className="mt-2 text-sm text-purple-300 bg-purple-500/10 px-3 py-2 rounded-lg">
+                  Added context: {subtask.userContext}
+                </div>
+              )}
+              <div className="flex items-center gap-1 mt-1 text-xs text-white/50">
+                <Bot className="w-3 h-3" />
+                {subtask.agent}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {editingSubtask?.taskId === taskId && editingSubtask?.subtaskIndex === index && (
+          <div className="mt-2">
+            <Input
+              placeholder="Add context or clarification..."
+              classNames={{
+                input: "bg-transparent text-white/90",
+                inputWrapper: "backdrop-blur-xl bg-purple-400/10 border-purple-400/20"
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSubtaskContextSubmit(taskId, index, e.currentTarget.value);
+                }
+              }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSubtasks = (task: TaskResponse) => {
+    const directTasks = task.subtasks.filter(st => st.category === 1);
+    const optionalTasks = task.subtasks.filter(st => st.category === 2);
+
+    return (
+      <div className="px-11 py-4 space-y-3">
+        {/* Direct Tasks */}
+        {directTasks.map((subtask, idx) => renderSubtask(subtask, task.id, task.subtasks.indexOf(subtask)))}
+        
+        {/* Optional Tasks Section */}
+        {optionalTasks.length > 0 && (
+          <>
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="text-white/40 text-sm">Optional Tasks</span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+            {optionalTasks.map((subtask, idx) => renderSubtask(subtask, task.id, task.subtasks.indexOf(subtask)))}
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -146,8 +207,11 @@ const TaskList = () => {
       {tasks.map(task => (
         <div key={task.id} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl overflow-hidden">
           {/* Task Header */}
-          <div className="p-4 flex items-start gap-3 cursor-pointer hover:bg-white/5">
-            <div className="mt-1 text-white/60" onClick={() => toggleTask(task.id)}>
+          <div 
+            className="p-4 flex items-start gap-3 cursor-pointer hover:bg-white/5"
+            onClick={() => toggleTask(task.id)}
+          >
+            <div className="mt-1 text-white/60">
               {expandedTasks.has(task.id) ? 
                 <ChevronDown className="w-4 h-4" /> : 
                 <ChevronRight className="w-4 h-4" />
@@ -161,6 +225,9 @@ const TaskList = () => {
                   <Button
                     size="sm"
                     className="backdrop-blur-xl bg-white/5 border border-white/20 text-white/60 w-10 h-10 min-w-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -186,7 +253,7 @@ const TaskList = () => {
           {expandedTasks.has(task.id) && (
             <div className="backdrop-blur-xl bg-black/40">
               {/* Clarification Section */}
-              {task.needsClarification && (
+              {task.needsClarification && task.clarificationPrompt && (
                 <div className="px-11 py-4 border-b border-white/10 bg-purple-500/10">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-4 h-4 text-purple-300 mt-1" />
@@ -209,93 +276,8 @@ const TaskList = () => {
                 </div>
               )}
 
-              {/* Subtasks */}
-              <div className="px-11 py-4 space-y-3">
-                {task.subtasks.map((subtask, idx) => (
-                  <div key={idx}>
-                    <div className={`backdrop-blur-xl rounded-lg transition-colors ${
-                      subtask.category === 2 
-                        ? 'bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20' 
-                        : 'bg-white/5 hover:bg-white/10 border border-blue-500/20'
-                    }`}>
-                      <div className="flex gap-3 p-3">
-                        {subtask.category === 2 && (
-                          <div className="flex items-start pt-1">
-                            <Checkbox
-                              isSelected={subtask.approved}
-                              onValueChange={() => toggleSubtaskApproval(task.id, idx)}
-                              classNames={{
-                                wrapper: "before:border-amber-500/40",
-                                label: "text-white/90"
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div className="mt-1">
-                          {subtask.icon && (
-                            <subtask.icon className={`w-5 h-5 ${
-                              subtask.category === 2 ? 'text-amber-400' : 'text-blue-400'
-                            }`} />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/90">{subtask.title}</span>
-                              {subtask.category === 1 && (
-                                <div className={`w-2 h-2 rounded-full ${
-                                  subtask.status === 'complete' ? 'bg-green-400' :
-                                  subtask.status === 'active' ? 'bg-blue-400' :
-                                  'bg-white/30'
-                                }`} />
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              className="backdrop-blur-xl bg-white/5 border border-white/20 text-white/60 w-8 h-8 min-w-0 p-0"
-                              onClick={() => startEditingSubtask(task.id, idx)}
-                            >
-                              <Settings2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <div className={`text-sm mt-1 ${
-                            subtask.category === 2 ? 'text-amber-100/80' : 'text-white/60'
-                          }`}>
-                            {subtask.detail}
-                          </div>
-                          {subtask.userContext && (
-                            <div className="mt-2 text-sm text-purple-300 bg-purple-500/10 px-3 py-2 rounded-lg">
-                              Added context: {subtask.userContext}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1 mt-1 text-xs text-white/50">
-                            <Bot className="w-3 h-3" />
-                            {subtask.agent}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Edit Context Input */}
-                    {editingSubtask?.taskId === task.id && editingSubtask?.subtaskIndex === idx && (
-                      <div className="mt-2">
-                        <Input
-                          placeholder="Add context or clarification..."
-                          classNames={{
-                            input: "bg-transparent text-white/90",
-                            inputWrapper: "backdrop-blur-xl bg-purple-400/10 border-purple-400/20"
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSubtaskContextSubmit(task.id, idx, e.currentTarget.value);
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {/* Subtasks with separation */}
+              {renderSubtasks(task)}
             </div>
           )}
         </div>
