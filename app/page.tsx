@@ -1,7 +1,8 @@
 "use client"
+
 import { useState } from "react";
 import { SearchBar } from "@/app/componentsV2/SearchBar";
-import { TaskList } from "@/app/componentsV2/TaskList";
+import TaskList from "@/app/componentsV2/TaskList";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
@@ -9,6 +10,7 @@ export default function Home() {
   
   const handleSearch = (query: string) => {
     setIsSearching(false);
+    // Here you would typically trigger your task creation logic
   };
 
   return (
@@ -58,11 +60,11 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Task List */}
+      {/* Task List Container with Backdrop Blur */}
       <AnimatePresence>
         {!isSearching && (
           <motion.div 
-            className="fixed left-0 right-0 top-0 pt-8 px-4"
+            className="fixed left-0 right-0 top-0 pt-8 px-4 pb-32 overflow-y-auto max-h-screen"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -75,7 +77,7 @@ export default function Home() {
 
       {/* Search Bar Container */}
       <motion.div
-        className="fixed left-1/2 w-1/2"
+        className="fixed left-1/2 w-1/2 min-w-[600px]"
         initial={{ y: "50vh", x: "-50%" }}
         animate={{ 
           y: isSearching ? "50vh" : "calc(100vh - 12rem)",
