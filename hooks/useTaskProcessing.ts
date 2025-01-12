@@ -1,12 +1,18 @@
 // hooks/useTaskProcessing.ts
 import { useState } from 'react';
-import { TaskResponse } from '@/app/api/process-query/route';
+import { Task } from '@/types/types';
 
-export const useTaskProcessing = () => {
+export interface TaskProcessingHook {
+  processQuery: (query: string) => Promise<Task | null>;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const useTaskProcessing = (): TaskProcessingHook => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const processQuery = async (query: string): Promise<TaskResponse | null> => {
+  const processQuery = async (query: string): Promise<Task | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -23,7 +29,7 @@ export const useTaskProcessing = () => {
         throw new Error('Failed to process query');
       }
 
-      const data: TaskResponse = await response.json();
+      const data: Task = await response.json();
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

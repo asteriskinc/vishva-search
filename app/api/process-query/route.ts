@@ -1,38 +1,14 @@
 // app/api/process-query/route.ts
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-
-export interface Agent {
-  id: string;
-  name: string;
-  capabilities: string[];
-}
-
-export interface SubTask {
-  title: string;
-  status: 'pending' | 'active' | 'complete';
-  agent: string;
-  detail: string;
-  icon?: string;
-  category: 1 | 2;  // 1: Direct, 2: Optional
-  approved?: boolean;
-}
-
-export interface TaskResponse {
-  id: string;
-  query: string;
-  timestamp: string;
-  domain: string;
-  needsClarification: boolean;
-  clarificationPrompt?: string;
-  subtasks: SubTask[];
-}
+import { Task } from '@/types/types';
 
 export async function POST(request: Request) {
   try {
     const { query } = await request.json();
     
-    const response = await axios.post('http://127.0.0.1:8000/api/process-query', 
+    const response = await axios.post<Task>(
+      'http://127.0.0.1:8000/api/process-query', 
       { query },
       {
         headers: {

@@ -4,21 +4,48 @@ import { useState } from "react";
 import { SearchBar } from "@/app/componentsV2/SearchBar";
 import TaskList from "@/app/componentsV2/TaskList";
 import { motion, AnimatePresence } from "framer-motion";
-import { TaskResponse } from "@/app/api/process-query/route";
+import { useTaskProcessing } from '@/hooks/useTaskProcessing';
+import { Task, TaskStatus } from "@/types/types";
 
 export default function Home() {
   const [isSearching, setIsSearching] = useState(true);
-  const [tasks, setTasks] = useState<TaskResponse[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const { processQuery, isLoading } = useTaskProcessing();
   
-  const handleSearch = (task: TaskResponse) => {
-    setTasks(currentTasks => [task, ...currentTasks]);
+  const handleSearch = async (query: string) => {
+    // Create a placeholder task
+    const placeholderTask: Task = {
+      task_id: Date.now().toString(),
+      query,
+      timestamp: "Just now",
+      domain: "Processing...",
+      needsClarification: false,
+      subtasks: [],
+      status: TaskStatus.PENDING
+    };
+    
+    setTasks(currentTasks => [placeholderTask, ...currentTasks]);
     setIsSearching(false);
+
+    // Process the query
+    const result = await processQuery(query);
+    if (result) {
+      setTasks(currentTasks => 
+        currentTasks.map(task => 
+          task.task_id === placeholderTask.task_id ? result : task
+        )
+      );
+    } else {
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.task_id !== placeholderTask.task_id)
+      );
+    }
   };
 
-  const handleTaskUpdate = (updatedTask: TaskResponse) => {
+  const handleTaskUpdate = (updatedTask: Task) => {
     setTasks(currentTasks => 
       currentTasks.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
+        task.task_id === updatedTask.task_id ? updatedTask : task
       )
     );
   };
@@ -83,6 +110,7 @@ export default function Home() {
             <TaskList 
               tasks={tasks}
               onTaskUpdate={handleTaskUpdate}
+              isLoading={isLoading}
             />
           </motion.div>
         )}
