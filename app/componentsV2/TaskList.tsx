@@ -7,6 +7,7 @@ import {
   Task, SubTask, TaskListProps, IconMap, EditingSubtask, 
   TaskUpdateHandlers, TaskStatus 
 } from '@/types/types';
+import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
 
 
 const ICON_MAP: IconMap = {
@@ -28,18 +29,27 @@ const TaskList: React.FC<TaskListProps> = ({
   onTaskUpdate,
   isLoading = false
 }) => {
+  // State declarations
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(() => {
     return new Set(tasks.length > 0 ? [tasks[0].task_id] : []);
   });
   
   const [editingSubtask, setEditingSubtask] = useState<EditingSubtask | null>(null);
 
+  // Add WebSocket hooks for each task
+  const taskWebSockets = tasks.reduce((acc, task) => {
+    acc[task.task_id] = useTaskWebSocket(task);
+    return acc;
+  }, {} as Record<string, ReturnType<typeof useTaskWebSocket>>);
+
+  // Effect to expand the first task
   useEffect(() => {
     if (tasks.length > 0 && !isLoading) {
       setExpandedTasks(prev => new Set([tasks[0].task_id, ...Array.from(prev)]));
     }
   }, [tasks.length, isLoading]);
 
+  // Function to toggle the expansion of a task
   const toggleTask = (taskId: string) => {
     const newExpanded = new Set(expandedTasks);
     if (newExpanded.has(taskId)) {
@@ -204,12 +214,40 @@ const TaskList: React.FC<TaskListProps> = ({
   };
 
   const renderSubtasks = (task: Task) => {
+    const { isConnected, error, executionStatus, executeTask, isExecuting } = 
+      taskWebSockets[task.task_id];
+
     const directTasks = task.subtasks.filter(st => st.category === 1);
     const optionalTasks = task.subtasks.filter(st => st.category === 2);
 
     return (
       <div className="px-4 py-4 space-y-3">
-        {/* Direct Tasks */}
+        {/* Add Execute Button Section */}
+        <div className="flex items-center justify-end gap-3 mb-4">
+          {/* Status Dot */}
+          <div 
+            className={`w-3 h-3 rounded-full transition-colors ${
+              isConnected 
+                ? 'bg-green-500 animate-pulse' 
+                : 'bg-red-500'
+            }`}
+            title={isConnected ? 'Connected' : error || 'Disconnected'}
+          />
+          
+          {/* Execute Button */}
+          <Button
+            className="backdrop-blur-xl bg-indigo-500/20 border border-indigo-500/30 
+                     text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-50 
+                     disabled:cursor-not-allowed disabled:hover:bg-indigo-500/20"
+            onClick={executeTask}
+            isLoading={isExecuting}
+            isDisabled={!isConnected}
+          >
+            Execute Task
+          </Button>
+        </div>
+
+        {/* Existing subtasks rendering code */}
         {directTasks.map((subtask, idx) => renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask)))}
         
         {/* Optional Tasks Section */}
