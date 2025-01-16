@@ -110,14 +110,26 @@ export const useTaskWebSocket = (task: Task) => {
     }
 
     setIsExecuting(true);
+    // Only include subtasks that should be executed
+    const executableSubtasks = task.subtasks
+      .filter(subtask => 
+        // Include if it's a required task (category 1)
+        // or if it's an optional task that was promoted (will have category 1)
+        subtask.category === 1
+      )
+      .map(subtask => ({
+        subtask_id: subtask.subtask_id,
+        category: subtask.category
+      }));
+
+    // print executable subtasks
+    console.log('Executable subtasks:', executableSubtasks);
+
     const message: WebSocketMessage = {
       type: 'START_EXECUTION',
       payload: {
         taskId: task.task_id,
-        subtasks: task.subtasks.map(subtask => ({
-          subtask_id: subtask.subtask_id,
-          category: subtask.category
-        }))
+        subtasks: executableSubtasks
       }
     };
 

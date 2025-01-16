@@ -90,9 +90,10 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <p className="text-2xl font-bold text-white/70">INTRODUCING</p>
-            <h1 className="mb-4 text-8xl bg-gradient-to-r font-semibold from-indigo-700 via-purple-600 to-amber-400 bg-clip-text text-transparent">
+            {/* <h1 className="mb-4 text-8xl bg-gradient-to-r font-semibold from-indigo-700 via-purple-600 to-amber-400 bg-clip-text text-transparent">
               VISHVA
-            </h1>
+            </h1> */}
+            <h1 className="text-[120px] font-semibold text-white leading-none">VISHVA</h1>
           </motion.div>
         )}
       </AnimatePresence>

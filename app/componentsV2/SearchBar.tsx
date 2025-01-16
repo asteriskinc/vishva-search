@@ -31,7 +31,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
               "group-data-[focused=true]:bg-white/10",
             ].filter(Boolean).join(" "),
           }}
-          startContent={<Search className="text-indigo-400" size={20} />}
+          startContent={<Search className="text-white" size={20} />}
         />
         
         <div className="flex gap-4 mt-2 ml-2">
@@ -41,21 +41,21 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
               className="w-10 h-10 backdrop-blur-xl bg-white/5 border border-white/20 hover:bg-white/10 group dark"
               radius="lg"
             >
-              <Compass className="text-indigo-400 group-hover:text-indigo-300 transition-colors" size={20} />
+              <Compass className="text-white group-hover:text-white transition-colors" size={20} />
             </Button>
             <Button
               isIconOnly
               className="w-10 h-10 backdrop-blur-xl bg-white/5 border border-white/20 hover:bg-white/10 group dark"
               radius="lg"
             >
-              <Zap className="text-indigo-400 group-hover:text-indigo-300 transition-colors" size={20} />
+              <Zap className="text-white group-hover:text-white transition-colors" size={20} />
             </Button>
             <Button
               isIconOnly
               className="w-10 h-10 backdrop-blur-xl bg-white/5 border border-white/20 hover:bg-white/10 group dark"
               radius="lg"
             >
-              <Settings className="text-indigo-400 group-hover:text-indigo-300 transition-colors" size={20} />
+              <Settings className="text-white group-hover:text-white transition-colors" size={20} />
             </Button>
           </div>
 
@@ -64,7 +64,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             className="w-10 h-10 backdrop-blur-xl bg-white/5 border border-white/20 hover:bg-white/10 ml-auto group dark"
             radius="lg"
           >
-            <Send className="text-indigo-400 group-hover:text-indigo-300 transition-colors" size={20} />
+            <Send className="text-white group-hover:text-white transition-colors" size={20} />
           </Button>
         </div>
       </form>
