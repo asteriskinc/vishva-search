@@ -49,6 +49,23 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   }, [tasks.length, isLoading]);
 
+  // Function to filter subtasks based on execution status
+  const getFilteredSubtasks = (task: Task) => {
+    const { executionStatus } = taskWebSockets[task.task_id];
+    
+    // Only filter after execution is completed
+    if (executionStatus === TaskStatus.COMPLETED || executionStatus === TaskStatus.FAILED) {
+      // After execution, keep only direct tasks and executed optional tasks
+      return task.subtasks.filter(subtask => 
+        subtask.category === 1 || // Keep all direct tasks
+        (subtask.category === 2 && subtask.status !== TaskStatus.PENDING) // Keep only executed optional tasks
+      );
+    }
+    
+    // Before execution or during execution, return all tasks
+    return task.subtasks;
+  };
+
   // Function to toggle the expansion of a task
   const toggleTask = (taskId: string) => {
     const newExpanded = new Set(expandedTasks);
@@ -120,7 +137,6 @@ const TaskList: React.FC<TaskListProps> = ({
 
   const renderSubtask = (subtask: SubTask, taskId: string, index: number) => {
     const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
-
     return (
       <div key={index}>
         <div 
@@ -141,13 +157,13 @@ const TaskList: React.FC<TaskListProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-white/90">{subtask.title}</span>
-                  {subtask.category === 1 && (
-                    <div className={`w-2 h-2 rounded-full ${
-                      subtask.status === TaskStatus.COMPLETED ? 'bg-green-400' :
-                      subtask.status === TaskStatus.IN_PROGRESS ? 'bg-blue-400' :
-                      'bg-white/30'
-                    }`} />
-                  )}
+                  {/* Status dot now shows for all tasks */}
+                  <div className={`w-2 h-2 rounded-full ${
+                    subtask.status === TaskStatus.COMPLETED ? 'bg-green-400' :
+                    subtask.status === TaskStatus.IN_PROGRESS ? 'bg-blue-400' :
+                    subtask.status === TaskStatus.FAILED ? 'bg-red-400' :
+                    'bg-white/30'
+                  }`} />
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -215,10 +231,12 @@ const TaskList: React.FC<TaskListProps> = ({
 
   const renderSubtasks = (task: Task) => {
     const { isConnected, error, executionStatus, executeTask, isExecuting } = 
-      taskWebSockets[task.task_id];
+    taskWebSockets[task.task_id];
 
-    const directTasks = task.subtasks.filter(st => st.category === 1);
-    const optionalTasks = task.subtasks.filter(st => st.category === 2);
+    // Filter subtasks based on execution status
+    const filteredSubtasks = getFilteredSubtasks(task);
+    const directTasks = filteredSubtasks.filter(st => st.category === 1);
+    const optionalTasks = filteredSubtasks.filter(st => st.category === 2);
 
     return (
       <div className="px-4 py-4 space-y-3">
@@ -255,7 +273,12 @@ const TaskList: React.FC<TaskListProps> = ({
           <>
             <div className="flex items-center gap-4 my-6">
               <div className="flex-grow border-t border-white/10"></div>
-              <span className="text-white/40 text-sm">Click to Add These Suggested Tasks</span>
+              <span className="text-white/40 text-sm">
+                {taskWebSockets[task.task_id].executionStatus
+                  ? "Additional Tasks"  // After execution
+                  : "Click to Add These Suggested Tasks"  // Before execution
+                }
+              </span>
               <div className="flex-grow border-t border-white/10"></div>
             </div>
             {optionalTasks.map((subtask, idx) => renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask)))}
@@ -306,7 +329,7 @@ const TaskList: React.FC<TaskListProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <Bot className="w-3 h-3" />
-                  {task.subtasks.length} agents
+                  {getFilteredSubtasks(task).length} agents
                 </span>
               </div>
             </div>
