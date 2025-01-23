@@ -15,7 +15,7 @@ export default function Home() {
   const handleSearch = async (query: string) => {
     // Create a placeholder task
     const placeholderTask: Task = {
-      task_id: Date.now().toString(),
+      task_id: `placeholder_${Date.now().toString()}`,
       query,
       timestamp: "Just now",
       domain: "Processing...",

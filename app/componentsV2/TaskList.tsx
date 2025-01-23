@@ -8,6 +8,7 @@ import {
   TaskUpdateHandlers, TaskStatus 
 } from '@/types/types';
 import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
+import TaskExecutionMonitor from './TasExecutionMonitor';
 
 
 const ICON_MAP: IconMap = {
@@ -264,6 +265,11 @@ const TaskList: React.FC<TaskListProps> = ({
             Execute Task
           </Button>
         </div>
+
+        {/* Execution Monitor */}
+        {isExecuting && (
+          <TaskExecutionMonitor taskId={task.task_id} />
+        )}
 
         {/* Existing subtasks rendering code */}
         {directTasks.map((subtask, idx) => renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask)))}
