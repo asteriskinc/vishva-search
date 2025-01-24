@@ -3,27 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Skeleton } from "@nextui-org/react";
 import { MapPin, Building2, Timer, Navigation, ShoppingCart, Briefcase, CreditCard, 
   Car, Search, Settings2, Plus, Clock, Bot, ChevronDown, ChevronRight, AlertCircle, X } from "lucide-react";
-import { 
-  Task, SubTask, TaskListProps, IconMap, EditingSubtask, 
-  TaskUpdateHandlers, TaskStatus 
-} from '@/types/types';
+import { Task, SubTask, TaskListProps, IconMap, EditingSubtask, TaskStatus } from '@/types/types';
 import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
 import TaskExecutionMonitor from './TaskExecutionMonitor';
 
-
 const ICON_MAP: IconMap = {
-  MapPin,
-  Building2,
-  Timer,
-  Navigation,
-  ShoppingCart,
-  Briefcase,
-  CreditCard,
-  Car,
-  Search,
-  Bot
+  MapPin, Building2, Timer, Navigation, ShoppingCart, 
+  Briefcase, CreditCard, Car, Search, Bot
 };
-
 
 const TaskList: React.FC<TaskListProps> = ({
   tasks = [],
@@ -34,16 +21,15 @@ const TaskList: React.FC<TaskListProps> = ({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(() => {
     return new Set(tasks.length > 0 ? [tasks[0].task_id] : []);
   });
-  
   const [editingSubtask, setEditingSubtask] = useState<EditingSubtask | null>(null);
 
-  // Add WebSocket hooks for each task
+  // Create WebSocket hooks for each task
   const taskWebSockets = tasks.reduce((acc, task) => {
     acc[task.task_id] = useTaskWebSocket(task);
     return acc;
   }, {} as Record<string, ReturnType<typeof useTaskWebSocket>>);
 
-  // Effect to expand the first task
+  // Effect to expand first task
   useEffect(() => {
     if (tasks.length > 0 && !isLoading) {
       setExpandedTasks(prev => new Set([tasks[0].task_id, ...Array.from(prev)]));
@@ -54,28 +40,25 @@ const TaskList: React.FC<TaskListProps> = ({
   const getFilteredSubtasks = (task: Task) => {
     const { executionStatus } = taskWebSockets[task.task_id];
     
-    // Only filter after execution is completed
     if (executionStatus === TaskStatus.COMPLETED || executionStatus === TaskStatus.FAILED) {
-      // After execution, keep only direct tasks and executed optional tasks
       return task.subtasks.filter(subtask => 
-        subtask.category === 1 || // Keep all direct tasks
-        (subtask.category === 2 && subtask.status !== TaskStatus.PENDING) // Keep only executed optional tasks
+        subtask.category === 1 || 
+        (subtask.category === 2 && subtask.status !== TaskStatus.PENDING)
       );
     }
-    
-    // Before execution or during execution, return all tasks
     return task.subtasks;
   };
 
-  // Function to toggle the expansion of a task
   const toggleTask = (taskId: string) => {
-    const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
-    }
-    setExpandedTasks(newExpanded);
+    setExpandedTasks(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(taskId)) {
+        newExpanded.delete(taskId);
+      } else {
+        newExpanded.add(taskId);
+      }
+      return newExpanded;
+    });
   };
 
   const handleClarificationSubmit = (taskId: string, response: string) => {
@@ -93,9 +76,7 @@ const TaskList: React.FC<TaskListProps> = ({
         ? {
             ...task,
             subtasks: task.subtasks.map((subtask, idx) => 
-              idx === subtaskIndex 
-                ? { ...subtask, category: 1 }
-                : subtask
+              idx === subtaskIndex ? { ...subtask, category: 1 } : subtask
             )
           }
         : task
@@ -122,11 +103,7 @@ const TaskList: React.FC<TaskListProps> = ({
             ...task,
             subtasks: task.subtasks.map((subtask, idx) => 
               idx === subtaskIndex 
-                ? { 
-                    ...subtask, 
-                    userContext: context,
-                    status: 'pending' as const
-                  }
+                ? { ...subtask, userContext: context, status: TaskStatus.PENDING }
                 : subtask
             )
           }
@@ -138,11 +115,14 @@ const TaskList: React.FC<TaskListProps> = ({
 
   const renderSubtask = (subtask: SubTask, taskId: string, index: number) => {
     const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
+    const { getSubtaskStatus } = taskWebSockets[taskId];
+    const status = getSubtaskStatus(subtask.subtask_id);
+
     return (
       <div key={index}>
         <div 
           className={`backdrop-blur-xl rounded-lg transition-colors ${
-              subtask.category === 2 
+            subtask.category === 2 
               ? 'bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 cursor-pointer' 
               : 'bg-white/5 hover:bg-white/10 border border-blue-500/20'
           }`}
@@ -158,11 +138,10 @@ const TaskList: React.FC<TaskListProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-white/90">{subtask.title}</span>
-                  {/* Status dot now shows for all tasks */}
                   <div className={`w-2 h-2 rounded-full ${
-                    subtask.status === TaskStatus.COMPLETED ? 'bg-green-400' :
-                    subtask.status === TaskStatus.IN_PROGRESS ? 'bg-blue-400' :
-                    subtask.status === TaskStatus.FAILED ? 'bg-red-400' :
+                    status === TaskStatus.COMPLETED ? 'bg-green-400' :
+                    status === TaskStatus.IN_PROGRESS ? 'bg-blue-400' :
+                    status === TaskStatus.FAILED ? 'bg-red-400' :
                     'bg-white/30'
                   }`} />
                 </div>
@@ -231,8 +210,12 @@ const TaskList: React.FC<TaskListProps> = ({
   };
 
   const renderSubtasks = (task: Task) => {
-    const { isConnected, error, executionStatus, executeTask, isExecuting } = 
-    taskWebSockets[task.task_id];
+    const { 
+      isConnected, 
+      error, 
+      executeTask,
+      isExecuting 
+    } = taskWebSockets[task.task_id];
 
     // Filter subtasks based on execution status
     const filteredSubtasks = getFilteredSubtasks(task);
@@ -241,14 +224,12 @@ const TaskList: React.FC<TaskListProps> = ({
 
     return (
       <div className="px-4 py-4 space-y-3">
-        {/* Add Execute Button Section */}
+        {/* Execute Button Section */}
         <div className="flex items-center justify-end gap-3 mb-4">
-          {/* Status Dot */}
+          {/* Connection Status Dot */}
           <div 
             className={`w-3 h-3 rounded-full transition-colors ${
-              isConnected 
-                ? 'bg-green-500 animate-pulse' 
-                : 'bg-red-500'
+              isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
             }`}
             title={isConnected ? 'Connected' : error || 'Disconnected'}
           />
@@ -268,11 +249,17 @@ const TaskList: React.FC<TaskListProps> = ({
 
         {/* Execution Monitor */}
         {isExecuting && (
-          <TaskExecutionMonitor taskId={task.task_id} />
+          <TaskExecutionMonitor 
+            taskId={task.task_id}
+            isConnected={isConnected}
+            error={error}
+          />
         )}
 
-        {/* Existing subtasks rendering code */}
-        {directTasks.map((subtask, idx) => renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask)))}
+        {/* Direct Tasks */}
+        {directTasks.map((subtask, idx) => 
+          renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask))
+        )}
         
         {/* Optional Tasks Section */}
         {optionalTasks.length > 0 && (
@@ -280,14 +267,16 @@ const TaskList: React.FC<TaskListProps> = ({
             <div className="flex items-center gap-4 my-6">
               <div className="flex-grow border-t border-white/10"></div>
               <span className="text-white/40 text-sm">
-                {taskWebSockets[task.task_id].executionStatus
-                  ? "Additional Tasks"  // After execution
-                  : "Click to Add These Suggested Tasks"  // Before execution
+                {isExecuting 
+                  ? "Additional Tasks" 
+                  : "Click to Add These Suggested Tasks"
                 }
               </span>
               <div className="flex-grow border-t border-white/10"></div>
             </div>
-            {optionalTasks.map((subtask, idx) => renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask)))}
+            {optionalTasks.map((subtask, idx) => 
+              renderSubtask(subtask, task.task_id, task.subtasks.indexOf(subtask))
+            )}
           </>
         )}
       </div>

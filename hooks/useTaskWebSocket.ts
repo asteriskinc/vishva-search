@@ -1,160 +1,107 @@
 // hooks/useTaskWebSocket.ts
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Task, TaskStatus } from '@/types/types';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
-interface WebSocketMessage {
+
+interface BaseWebSocketMessage {
   type: string;
-  payload?: any;
+  payload: Record<string, unknown>;
 }
 
+interface SubtaskUpdateMessage extends BaseWebSocketMessage {
+  type: 'SUBTASK_UPDATE';
+  payload: {
+    subtask_id: string;
+    status: TaskStatus;
+  };
+}
+
+interface ExecutionStatusMessage extends BaseWebSocketMessage {
+  type: 'EXECUTION_STATUS';
+  payload: {
+    status: TaskStatus;
+  };
+}
+
+interface ErrorMessage extends BaseWebSocketMessage {
+  type: 'ERROR';
+  payload: {
+    message: string;
+  };
+}
+
+type WebSocketMessage = SubtaskUpdateMessage | ExecutionStatusMessage | ErrorMessage;
+
+
 export const useTaskWebSocket = (task: Task) => {
+  const { connect, disconnect, sendMessage, subscribe } = useWebSocket();
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<TaskStatus>(task.status);
   const [isExecuting, setIsExecuting] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectAttemptRef = useRef<number>(0);
-  const maxReconnectAttempts = 5;
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const messageQueueRef = useRef<WebSocketMessage[]>([]);
-  const isReconnectingRef = useRef(false);
-
-  const connect = useCallback(() => {
-    // Don't create a new connection if we already have one
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
-    // Clear any existing connection
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-
-    try {
-      const ws = new WebSocket(`ws://localhost:8000/api/task-execution/${task.task_id}`);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log(`[useTaskWebSocket] WebSocket connected for task ${task.task_id}`);
-        setIsConnected(true);
-        setError(null);
-        reconnectAttemptRef.current = 0;
-        isReconnectingRef.current = false;
-
-        // Send any queued messages
-        while (messageQueueRef.current.length > 0) {
-          const message = messageQueueRef.current.shift();
-          if (message) {
-            ws.send(JSON.stringify(message));
-          }
-        }
-      };
-
-      ws.onclose = (event) => {
-        console.log(`[useTaskWebSocket] WebSocket disconnected for task ${task.task_id}`);
-        setIsConnected(false);
-
-        // Only attempt reconnect if not manually closed and not already reconnecting
-        if (!event.wasClean && !isReconnectingRef.current) {
-          handleReconnect();
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error(`[useTaskWebSocket] WebSocket error for task ${task.task_id}:`, error);
-        setError('Failed to connect to server');
-        setIsConnected(false);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message: WebSocketMessage = JSON.parse(event.data);
-          console.log(`[useTaskWebSocket] Received message for task ${task.task_id}:`, message);
-
-          switch (message.type) {
-            case 'EXECUTION_STATUS':
-              setExecutionStatus(message.payload.status);
-              setIsExecuting(false);
-              break;
-            case 'SUBTASK_UPDATE':
-              // Handle subtask updates
-              if (message.payload.subtask_id) {
-                // Update specific subtask status
-                const subtaskId = message.payload.subtask_id;
-                const status = message.payload.status;
-                // You might want to emit an event or callback here
-              }
-              break;
-            default:
-              console.log('[useTaskWebSocket] Unhandled message type:', message.type);
-          }
-        } catch (err) {
-          console.error('[useTaskWebSocket] Error processing message:', err);
-        }
-      };
-    } catch (err) {
-      console.error('[useTaskWebSocket] Error creating WebSocket:', err);
-      setError('Failed to create WebSocket connection');
-    }
-  }, [task.task_id]);
-
-  const handleReconnect = useCallback(() => {
-    if (reconnectAttemptRef.current >= maxReconnectAttempts) {
-      console.log('[useTaskWebSocket] Max reconnection attempts reached');
-      return;
-    }
-
-    isReconnectingRef.current = true;
-    const timeout = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 10000);
-    
-    console.log(`[useTaskWebSocket] Attempting to reconnect in ${timeout}ms`);
-    
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectAttemptRef.current++;
-      connect();
-    }, timeout);
-  }, [connect]);
+  const [subtaskStatuses, setSubtaskStatuses] = useState<Record<string, TaskStatus>>({});
 
   useEffect(() => {
-    connect();
+    // Initial connection
+    setIsConnected(true);
+    connect(task.task_id);
 
+    // Subscribe to messages
+    const unsubscribe = subscribe(task.task_id, (message: WebSocketMessage) => {
+      console.log(`[useTaskWebSocket] Received message for task ${task.task_id}:`, message);
+
+      try {
+        switch (message.type) {
+          case 'EXECUTION_STATUS':
+            setExecutionStatus(message.payload.status || TaskStatus.PENDING);
+            if (message.payload.status === TaskStatus.COMPLETED || 
+                message.payload.status === TaskStatus.FAILED) {
+              setIsExecuting(false);
+            }
+            break;
+
+          case 'SUBTASK_UPDATE':
+            if (message.payload.subtask_id && message.payload.status) {
+              setSubtaskStatuses(prev => ({
+                ...prev,
+                [message.payload.subtask_id]: message.payload.status
+              }));
+            }
+            break;
+
+          case 'ERROR':
+            setError(message.payload.message || 'An unknown error occurred');
+            setIsExecuting(false);
+            break;
+        }
+      } catch (err) {
+        console.error('[useTaskWebSocket] Error processing message:', err);
+        setError('Error processing server message');
+      }
+    });
+
+    // Cleanup on unmount
     return () => {
-      isReconnectingRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+      console.log(`[useTaskWebSocket] Cleaning up WebSocket for task ${task.task_id}`);
+      unsubscribe();
+      disconnect(task.task_id);
+      setIsConnected(false);
     };
-  }, [connect]);
+  }, [task.task_id, connect, disconnect, subscribe]);
 
-  const sendMessage = useCallback((message: WebSocketMessage) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      // Queue message if socket is not ready
-      messageQueueRef.current.push(message);
-      if (!isReconnectingRef.current) {
-        connect();
-      }
+  const executeTask = useCallback(() => {
+    if (!isConnected) {
+      setError('Not connected to server');
       return;
     }
 
-    try {
-      wsRef.current.send(JSON.stringify(message));
-    } catch (err) {
-      console.error('[useTaskWebSocket] Error sending message:', err);
-      messageQueueRef.current.push(message);
-    }
-  }, [connect]);
-
-  const executeTask = useCallback(() => {
+    // Reset states
+    setError(null);
     setIsExecuting(true);
+    setSubtaskStatuses({});
+
+    // Get executable subtasks (direct tasks only)
     const executableSubtasks = task.subtasks
       .filter(subtask => subtask.category === 1)
       .map(subtask => ({
@@ -164,22 +111,33 @@ export const useTaskWebSocket = (task: Task) => {
 
     console.log('[useTaskWebSocket] Executable subtasks:', executableSubtasks);
 
-    const message: WebSocketMessage = {
-      type: 'START_EXECUTION',
-      payload: {
-        taskId: task.task_id,
-        subtasks: executableSubtasks
-      }
-    };
+    // Send execution message
+    try {
+      sendMessage(task.task_id, {
+        type: 'START_EXECUTION',
+        payload: {
+          taskId: task.task_id,
+          subtasks: executableSubtasks
+        }
+      });
+    } catch (err) {
+      console.error('[useTaskWebSocket] Error sending execution message:', err);
+      setError('Failed to start task execution');
+      setIsExecuting(false);
+    }
+  }, [task, isConnected, sendMessage]);
 
-    sendMessage(message);
-  }, [task, sendMessage]);
+  const getSubtaskStatus = useCallback((subtaskId: string) => {
+    return subtaskStatuses[subtaskId] || TaskStatus.PENDING;
+  }, [subtaskStatuses]);
 
   return {
     isConnected,
     error,
     executionStatus,
     isExecuting,
-    executeTask
+    executeTask,
+    getSubtaskStatus,
+    subtaskStatuses
   };
 };

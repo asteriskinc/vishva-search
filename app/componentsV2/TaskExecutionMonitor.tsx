@@ -1,7 +1,9 @@
+// components/TaskExecutionMonitor.tsx
 import React, { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader, ScrollShadow } from "@nextui-org/react";
 import { Terminal, Wifi, WifiOff, AlertCircle, CheckCircle2, CircleDot, XCircle } from "lucide-react";
 import { TaskStatus } from '@/types/types';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
 interface TaskUpdate {
   type: string;
@@ -15,59 +17,29 @@ interface TaskUpdate {
 
 interface TaskExecutionMonitorProps {
   taskId: string;
+  isConnected: boolean;
+  error: string | null;
 }
 
-const TaskExecutionMonitor: React.FC<TaskExecutionMonitorProps> = ({ taskId }) => {
+const TaskExecutionMonitor: React.FC<TaskExecutionMonitorProps> = ({ 
+  taskId,
+  isConnected,
+  error
+}) => {
   const [updates, setUpdates] = useState<TaskUpdate[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [connected, setConnected] = useState<boolean>(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const { subscribe } = useWebSocket();
 
   useEffect(() => {
-    const connect = () => {
-      const websocket = new WebSocket(`ws://localhost:8000/api/task-execution/${taskId}`);
-
-      websocket.onopen = () => {
-        console.log('WebSocket Connected');
-        setConnected(true);
-        setError(null);
-      };
-
-      websocket.onclose = () => {
-        console.log('WebSocket Disconnected');
-        setConnected(false);
-      };
-
-      websocket.onerror = (error) => {
-        console.error('WebSocket Error:', error);
-        setError('Failed to connect to server');
-        setConnected(false);
-      };
-
-      websocket.onmessage = (event) => {
-        try {
-          const update: TaskUpdate = JSON.parse(event.data);
-          console.log('Received update:', update);
-          
-          // Add all updates to our state
-          setUpdates(prev => [...prev, update]);
-          
-        } catch (err) {
-          console.error('Error processing message:', err);
-        }
-      };
-
-      setWs(websocket);
-    };
-
-    connect();
+    // Subscribe to WebSocket messages
+    const unsubscribe = subscribe(taskId, (update: TaskUpdate) => {
+      console.log('Monitor received update:', update);
+      setUpdates(prev => [...prev, update]);
+    });
 
     return () => {
-      if (ws) {
-        ws.close();
-      }
+      unsubscribe();
     };
-  }, [taskId]);
+  }, [taskId, subscribe]);
 
   const getStatusIcon = (status?: TaskStatus) => {
     switch (status) {
@@ -83,23 +55,20 @@ const TaskExecutionMonitor: React.FC<TaskExecutionMonitorProps> = ({ taskId }) =
   };
 
   return (
-    <Card 
-      className="backdrop-blur-xl bg-white/5 border border-white/20"
-      radius="lg"
-    >
+    <Card className="backdrop-blur-xl bg-white/5 border border-white/20" radius="lg">
       <CardHeader className="flex justify-between gap-3">
         <div className="flex items-center gap-2">
           <Terminal className="w-5 h-5 text-white/80" />
           <span className="text-white/90 font-medium">Execution Monitor</span>
         </div>
         <div className="flex items-center gap-2">
-          {connected ? (
+          {isConnected ? (
             <Wifi className="w-4 h-4 text-green-400" />
           ) : (
             <WifiOff className="w-4 h-4 text-red-400" />
           )}
           <span className="text-sm text-white/60">
-            {connected ? 'Connected' : 'Disconnected'}
+            {isConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
       </CardHeader>
