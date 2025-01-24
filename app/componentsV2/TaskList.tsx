@@ -8,7 +8,7 @@ import {
   TaskUpdateHandlers, TaskStatus 
 } from '@/types/types';
 import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
-import TaskExecutionMonitor from './TasExecutionMonitor';
+import TaskExecutionMonitor from './TaskExecutionMonitor';
 
 
 const ICON_MAP: IconMap = {
