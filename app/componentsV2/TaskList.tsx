@@ -286,7 +286,7 @@ const TaskList: React.FC<TaskListProps> = ({
   return (
     <div className="w-full max-w-3xl mx-auto space-y-3">
       {tasks.map(task => (
-        <div key={task.task_id} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl overflow-hidden">
+        <div key={task.task_id} className="backdrop-blur-xl bg-white/10 rounded-xl shadow-[0_20px_30px_-2px_rgba(0,0,0,0.6)] overflow-hidden">
           {/* Task Header */}
           <div 
             className="p-4 flex items-start gap-3 cursor-pointer hover:bg-white/5"

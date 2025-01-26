@@ -17,7 +17,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   };
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 shadow-xl border border-white/20">
+    <div className="backdrop-blur-md bg-white/10 rounded-3xl p-6 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.8)] border-1.5 border-white/20">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           name="query"
@@ -27,8 +27,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           classNames={{
             input: "bg-transparent text-white/90 placeholder:text-white/60",
             inputWrapper: [
-              "bg-white/5 border-white/20 hover:bg-white/10",
+              "bg-white/10 border-white/20 hover:bg-white/10",
               "group-data-[focused=true]:bg-white/10",
+              "shadow-[0_8px_12px_-1px_rgba(0,0,0,0.3)]"
             ].filter(Boolean).join(" "),
           }}
           startContent={<Search className="text-white" size={20} />}
