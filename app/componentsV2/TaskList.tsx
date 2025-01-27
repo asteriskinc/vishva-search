@@ -6,6 +6,7 @@ import { MapPin, Building2, Timer, Navigation, ShoppingCart, Briefcase, CreditCa
 import { Task, SubTask, TaskListProps, IconMap, EditingSubtask, TaskStatus } from '@/types/types';
 import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
 import TaskExecutionMonitor from './TaskExecutionMonitor';
+import SubtaskCard from './SubTaskCard';
 
 const ICON_MAP: IconMap = {
   MapPin, Building2, Timer, Navigation, ShoppingCart, 
@@ -117,77 +118,19 @@ const TaskList: React.FC<TaskListProps> = ({
     const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
     const { getSubtaskStatus } = taskWebSockets[taskId];
     const status = getSubtaskStatus(subtask.subtask_id);
-
+  
     return (
       <div key={index}>
-        <div 
-          className={`backdrop-blur-xl rounded-lg transition-colors ${
-            subtask.category === 2 
-              ? 'bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 cursor-pointer' 
-              : 'bg-white/5 hover:bg-white/10 border border-blue-500/20'
-          }`}
-          onClick={() => subtask.category === 2 && promoteToDirectTask(taskId, index)}
-        >
-          <div className="flex gap-3 p-3">
-            <div className="mt-1">
-              <IconComponent className={`w-5 h-5 ${
-                subtask.category === 2 ? 'text-amber-400' : 'text-blue-400'
-              }`} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-white/90">{subtask.title}</span>
-                  <div className={`w-2 h-2 rounded-full ${
-                    status === TaskStatus.COMPLETED ? 'bg-green-400' :
-                    status === TaskStatus.IN_PROGRESS ? 'bg-blue-400' :
-                    status === TaskStatus.FAILED ? 'bg-red-400' :
-                    'bg-white/30'
-                  }`} />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="backdrop-blur-xl bg-white/5 border border-white/20 text-white/60 w-8 h-8 min-w-0 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingSubtask({ taskId, subtaskIndex: index });
-                    }}
-                  >
-                    <Settings2 className="w-4 h-4" />
-                  </Button>
-                  {subtask.category === 2 && (
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      className="backdrop-blur-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 w-8 h-8 min-w-0 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeOptionalTask(taskId, index);
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className={`text-sm mt-1 ${
-                subtask.category === 2 ? 'text-amber-100/80' : 'text-white/60'
-              }`}>
-                {subtask.detail}
-              </div>
-              {subtask.userContext && (
-                <div className="mt-2 text-sm text-purple-300 bg-purple-500/10 px-3 py-2 rounded-lg">
-                  Added context: {subtask.userContext}
-                </div>
-              )}
-              <div className="flex items-center gap-1 mt-1 text-xs text-white/50">
-                <Bot className="w-3 h-3" />
-                {subtask.agent.name}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SubtaskCard
+          subtask={subtask}
+          taskId={taskId}
+          index={index}
+          status={status}
+          IconComponent={IconComponent}
+          onPromote={promoteToDirectTask}
+          onRemove={removeOptionalTask}
+          onEditContext={(taskId, index) => setEditingSubtask({ taskId, subtaskIndex: index })}
+        />
         
         {editingSubtask?.taskId === taskId && editingSubtask?.subtaskIndex === index && (
           <div className="mt-2">
@@ -248,13 +191,13 @@ const TaskList: React.FC<TaskListProps> = ({
         </div>
 
         {/* Execution Monitor */}
-        {isExecuting && (
+        {/* {isExecuting && (
           <TaskExecutionMonitor 
             taskId={task.task_id}
             isConnected={isConnected}
             error={error}
           />
-        )}
+        )} */}
 
         {/* Direct Tasks */}
         {directTasks.map((subtask, idx) => 
