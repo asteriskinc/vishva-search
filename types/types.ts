@@ -48,6 +48,13 @@ export interface SubTask {
   userContext?: string;
 }
 
+export interface SubtaskActivity {
+  taskId: string;
+  subtaskId: string;
+  message: string;
+  timestamp: string;
+}
+
 export interface Task {
   task_id: string;
   query: string;

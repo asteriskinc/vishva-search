@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Skeleton } from "@nextui-org/react";
 import { MapPin, Building2, Timer, Navigation, ShoppingCart, Briefcase, CreditCard, 
   Car, Search, Settings2, Plus, Clock, Bot, ChevronDown, ChevronRight, AlertCircle, X } from "lucide-react";
-import { Task, SubTask, TaskListProps, IconMap, EditingSubtask, TaskStatus } from '@/types/types';
+import { Task, SubTask, TaskListProps, IconMap, EditingSubtask, TaskStatus, SubtaskActivity } from '@/types/types';
 import { useTaskWebSocket } from "@/hooks/useTaskWebSocket";
-import TaskExecutionMonitor from './TaskExecutionMonitor';
+import { useWebSocket } from '@/contexts/WebSocketContext';
+// import TaskExecutionMonitor from './TaskExecutionMonitor';
 import SubtaskCard from './SubTaskCard';
 
 const ICON_MAP: IconMap = {
@@ -23,6 +24,9 @@ const TaskList: React.FC<TaskListProps> = ({
     return new Set(tasks.length > 0 ? [tasks[0].task_id] : []);
   });
   const [editingSubtask, setEditingSubtask] = useState<EditingSubtask | null>(null);
+  const [subtaskActivities, setSubtaskActivities] = useState<Record<string, SubtaskActivity>>({});
+  
+
 
   // Create WebSocket hooks for each task
   const taskWebSockets = tasks.reduce((acc, task) => {
@@ -30,12 +34,33 @@ const TaskList: React.FC<TaskListProps> = ({
     return acc;
   }, {} as Record<string, ReturnType<typeof useTaskWebSocket>>);
 
-  // Effect to expand first task
+  const { subscribe } = useWebSocket();
+
   useEffect(() => {
     if (tasks.length > 0 && !isLoading) {
       setExpandedTasks(prev => new Set([tasks[0].task_id, ...Array.from(prev)]));
     }
-  }, [tasks.length, isLoading]);
+
+    const unsubscribes = tasks.map(task => {
+      return subscribe(task.task_id, (message: any) => {
+        if (message.type === 'SUBTASK_UPDATE' && message.payload.subtask_id) {
+          setSubtaskActivities(prev => ({
+            ...prev,
+            [message.payload.subtask_id]: {
+              taskId: task.task_id,
+              subtaskId: message.payload.subtask_id,
+              message: message.payload.message,
+              timestamp: message.payload.timestamp
+            }
+          }));
+        }
+      });
+    });
+  
+    return () => {
+      unsubscribes.forEach(unsubscribe => unsubscribe());
+    };
+  }, [tasks.length, isLoading, subscribe]);
 
   // Function to filter subtasks based on execution status
   const getFilteredSubtasks = (task: Task) => {
@@ -118,6 +143,7 @@ const TaskList: React.FC<TaskListProps> = ({
     const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
     const { getSubtaskStatus } = taskWebSockets[taskId];
     const status = getSubtaskStatus(subtask.subtask_id);
+    const activity = subtaskActivities[subtask.subtask_id];
   
     return (
       <div key={index}>
@@ -130,6 +156,7 @@ const TaskList: React.FC<TaskListProps> = ({
           onPromote={promoteToDirectTask}
           onRemove={removeOptionalTask}
           onEditContext={(taskId, index) => setEditingSubtask({ taskId, subtaskIndex: index })}
+          latestActivity={activity?.message}
         />
         
         {editingSubtask?.taskId === taskId && editingSubtask?.subtaskIndex === index && (
