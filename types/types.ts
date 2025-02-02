@@ -101,3 +101,67 @@ export interface TaskUpdateHandlers {
   promoteToDirectTask: (taskId: string, subtaskIndex: number) => void;
   removeOptionalTask: (taskId: string, subtaskIndex: number) => void;
 }
+
+export interface BaseWebSocketMessage {
+  type: string;
+  payload: {
+    subtask_id: string | null;
+    status: TaskStatus;
+    message: string;
+    timestamp: string;
+    content?: any;  // Additional content based on message type
+  };
+}
+
+// Tool call start message
+export interface ToolCallStartContent {
+  type: 'tool_call_start';
+  data: {
+    tool: string;
+    arguments: Record<string, any>;
+  };
+}
+
+// Tool result message
+export interface ToolResultContent {
+  type: 'tool_result';
+  data: {
+    tool: string;
+    result: Record<string, any>;
+    error?: string;
+  };
+}
+
+// Agent thinking/response message
+export interface AgentResponseContent {
+  type: 'agent_response';
+  data: {
+    role: string;
+    content: string;
+  };
+}
+
+// Tool call error message
+export interface ToolCallErrorContent {
+  type: 'tool_call_error';
+  data: {
+    tool: string;
+    error: string;
+  };
+}
+
+// Union type for all possible content types
+export type WebSocketMessageContent = 
+  | ToolCallStartContent 
+  | ToolResultContent 
+  | AgentResponseContent 
+  | ToolCallErrorContent;
+
+// Update SubtaskActivity to match actual websocket messages
+export interface SubtaskActivity {
+  subtask_id: string | null;
+  status: TaskStatus;
+  message: string;
+  timestamp: string;
+  content?: WebSocketMessageContent;
+}

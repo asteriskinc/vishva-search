@@ -24,7 +24,7 @@ const TaskList: React.FC<TaskListProps> = ({
     return new Set(tasks.length > 0 ? [tasks[0].task_id] : []);
   });
   const [editingSubtask, setEditingSubtask] = useState<EditingSubtask | null>(null);
-  const [subtaskActivities, setSubtaskActivities] = useState<Record<string, SubtaskActivity>>({});
+  const [subtaskActivities, setSubtaskActivities] = useState<Record<string, SubtaskActivity[]>>({});
   
 
 
@@ -44,15 +44,22 @@ const TaskList: React.FC<TaskListProps> = ({
     const unsubscribes = tasks.map(task => {
       return subscribe(task.task_id, (message: any) => {
         if (message.type === 'SUBTASK_UPDATE' && message.payload.subtask_id) {
-          setSubtaskActivities(prev => ({
-            ...prev,
-            [message.payload.subtask_id]: {
-              taskId: task.task_id,
-              subtaskId: message.payload.subtask_id,
-              message: message.payload.message,
-              timestamp: message.payload.timestamp
-            }
-          }));
+          const activity = {
+            subtaskId: message.payload.subtask_id,
+            taskId: task.task_id,
+            message: message.payload.message,
+            timestamp: message.payload.timestamp,
+            content: message.payload.content
+          };
+
+          setSubtaskActivities(prev => {
+            const subtaskId = message.payload.subtask_id;
+            const currentActivities = prev[subtaskId] || [];
+            return {
+              ...prev,
+              [subtaskId]: [...currentActivities, activity]
+            };
+          });
         }
       });
     });
@@ -143,10 +150,12 @@ const TaskList: React.FC<TaskListProps> = ({
     const IconComponent = subtask.icon ? ICON_MAP[subtask.icon] : ICON_MAP.Bot;
     const { getSubtaskStatus } = taskWebSockets[taskId];
     const status = getSubtaskStatus(subtask.subtask_id);
-    const activity = subtaskActivities[subtask.subtask_id];
+    const activities = subtaskActivities[subtask.subtask_id] || [];
+    const latestActivity = activities[activities.length - 1]?.message;
+  
   
     return (
-      <div key={index}>
+      <div key={subtask.subtask_id}>
         <SubtaskCard
           subtask={subtask}
           taskId={taskId}
@@ -156,7 +165,8 @@ const TaskList: React.FC<TaskListProps> = ({
           onPromote={promoteToDirectTask}
           onRemove={removeOptionalTask}
           onEditContext={(taskId, index) => setEditingSubtask({ taskId, subtaskIndex: index })}
-          latestActivity={activity?.message}
+          latestActivity={latestActivity}
+          activities={activities}
         />
         
         {editingSubtask?.taskId === taskId && editingSubtask?.subtaskIndex === index && (
@@ -254,7 +264,7 @@ const TaskList: React.FC<TaskListProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-3">
+    <div className="w-full max-w-4xl mx-auto space-y-3">
       {tasks.map(task => (
         <div key={task.task_id} className="backdrop-blur-xl bg-white/10 rounded-xl shadow-[0_20px_30px_-2px_rgba(0,0,0,0.6)] overflow-hidden">
           {/* Task Header */}

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@nextui-org/react";
-import { Settings2, X, Bot, Terminal } from "lucide-react";
-import { TaskStatus, SubTask } from '@/types/types';
+import { Settings2, X, Bot, Terminal, ChevronDown, ChevronUp } from "lucide-react";
+import { TaskStatus, SubTask, SubtaskActivity } from '@/types/types';
+import ActivityLog from './ActivityLog';
 import styles from './SubTaskCard.module.css';
 
 interface SubTaskCardProps {
@@ -14,6 +15,7 @@ interface SubTaskCardProps {
   onRemove?: (taskId: string, index: number) => void;
   onEditContext?: (taskId: string, index: number) => void;
   latestActivity?: string;
+  activities?: SubtaskActivity[];
 }
 
 const SubTaskCard: React.FC<SubTaskCardProps> = ({
@@ -25,8 +27,10 @@ const SubTaskCard: React.FC<SubTaskCardProps> = ({
   onPromote,
   onRemove,
   onEditContext,
-  latestActivity
+  latestActivity,
+  activities = [],
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isOptional = subtask.category === 2;
   const isInProgress = status === TaskStatus.IN_PROGRESS;
   const isCompleted = status === TaskStatus.COMPLETED;
@@ -46,8 +50,13 @@ const SubTaskCard: React.FC<SubTaskCardProps> = ({
     }
   };
 
+  const handleActivityClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
   const renderCardContent = () => (
-    <div className="flex gap-3 p-3 pb-5">
+    <div className="flex gap-3 p-3">
       <div className="mt-1">
         <IconComponent 
           className={isOptional ? 'text-amber-400' : 'text-blue-400'} 
@@ -94,13 +103,32 @@ const SubTaskCard: React.FC<SubTaskCardProps> = ({
           </div>
         )}
 
-        {/* Agent Activity Section */}
+        {/* Activity Section */}
         {(isInProgress || isCompleted || isFailed) && latestActivity && (
-          <div className={styles.agentActivity}>
+          <div 
+            className={`${styles.agentActivity} cursor-pointer hover:bg-white/5 rounded-lg transition-colors`}
+            onClick={handleActivityClick}
+          >
             <Terminal className="w-4 h-4 mt-0.5 text-white/60" />
-            <div className={styles.agentActivityMessage}>
-              {latestActivity}
+            <div className="flex-1">
+              <div className={styles.agentActivityMessage}>
+                {latestActivity}
+              </div>
             </div>
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4 text-white/40" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-white/40" />
+            )}
+          </div>
+        )}
+
+        {/* Expanded Activity Log */}
+        {isExpanded && activities && activities.length > 0 && (
+          <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+            <ActivityLog 
+              activities={activities}
+            />
           </div>
         )}
 
@@ -109,11 +137,6 @@ const SubTaskCard: React.FC<SubTaskCardProps> = ({
             Added context: {subtask.userContext}
           </div>
         )}
-        
-        {/* <div className={styles.agentInfo}>
-          <Bot style={{ width: '12px', height: '12px' }} />
-          {subtask.agent.name}
-        </div> */}
       </div>
     </div>
   );
