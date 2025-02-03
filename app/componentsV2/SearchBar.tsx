@@ -1,11 +1,12 @@
-import { Input } from "@nextui-org/react";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, Send, Compass, Zap, Settings, Mic } from "lucide-react";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SearchBarProps } from '@/types/types';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [query, setQuery] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { 
     isListening, 
     isConnecting, 
@@ -15,7 +16,30 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     isSupported 
   } = useSpeechRecognition();
 
-  // Update query when transcript changes
+  // Auto-resize function with dynamic sizing
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = '44px';
+      const newHeight = textarea.scrollHeight;
+      
+      if (textarea.value.trim() === '') {
+        textarea.style.height = '44px';
+      } else {
+        textarea.style.height = `${Math.min(newHeight, 500)}px`;
+      }
+    }
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setQuery(e.target.value);
+    adjustTextareaHeight();
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [query]);
+
   useEffect(() => {
     if (transcript) {
       setQuery(transcript);
@@ -32,6 +56,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
     onSearch(query);
     setQuery('');
+    
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = '44px';
+    }
   };
 
   const handleMicClick = () => {
@@ -55,23 +84,35 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const buttonBaseClasses = "w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-200";
 
   return (
-    <div className="backdrop-blur-md bg-white/10 rounded-3xl p-6 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.8)] border-1.5 border-white/20">
+    <div className="backdrop-blur-md bg-black/20 rounded-3xl p-6 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.8)] border-1.5 border-white/20">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input
-          name="query"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="What can Vishva accomplish for you today?"
-          classNames={{
-            input: "bg-transparent text-white/90 placeholder:text-white/60",
-            inputWrapper: [
-              "bg-white/10 border-white/20 hover:bg-white/10",
-              "group-data-[focused=true]:bg-white/10",
-              "shadow-[0_8px_12px_-1px_rgba(0,0,0,0.3)]"
-            ].filter(Boolean).join(" "),
-          }}
-          startContent={<Search className="text-white" size={20} />}
-        />
+        <div className="relative">
+          <div className="absolute left-3 top-[11px] z-10">
+            <Search className="text-white/60" size={20} />
+          </div>
+          <Textarea
+            ref={textareaRef}
+            value={query}
+            onChange={handleContentChange}
+            placeholder="What can Vishva accomplish for you today?"
+            className="min-h-[44px] max-h-[500px] overflow-y-auto bg-black/20 border-white/30 
+                       hover:bg-black/50 focus:bg-black/50 text-white/90 placeholder:text-white/60 
+                       rounded-xl pl-10 pr-4 resize-none shadow-[0_8px_12px_-1px_rgba(0,0,0,0.3)] 
+                       backdrop-blur-sm scrollbar-thin scrollbar-track-white/5 
+                       scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20
+                       transition-[height] duration-200 ease-in-out
+                       text-[16px] placeholder:text-[16px]
+                       leading-[22px] placeholder:leading-[22px]
+                       py-[11px]"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            style={{ height: '44px' }}
+          />
+        </div>
         
         <div className="flex px-2">
           <div className="flex gap-3">
@@ -118,7 +159,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           </div>
         </div>
 
-        {/* Status Message */}
         {isConnecting && (
           <div className="text-center text-sm text-white/60 animate-pulse">
             Connecting microphone...

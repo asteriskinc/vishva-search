@@ -4,6 +4,7 @@ import "./globals.css";
 import {NextUIProvider} from "@nextui-org/react";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
