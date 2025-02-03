@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Vishva Engine",
+  title: "Vishva",
   description: "Created in NextJS 14",
 };
 

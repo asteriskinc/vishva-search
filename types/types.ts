@@ -127,7 +127,17 @@ export interface ToolResultContent {
   type: 'tool_result';
   data: {
     tool: string;
-    result: Record<string, any>;
+    result: {
+      title?: string;
+      url?: string;
+      summary?: string;
+      content?: string;
+      source?: string;
+      metadata?: {
+        status_code?: number;
+        redirected_url?: string;
+      };
+    };
     error?: string;
   };
 }
