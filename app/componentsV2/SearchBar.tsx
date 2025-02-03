@@ -73,8 +73,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           startContent={<Search className="text-white" size={20} />}
         />
         
-        <div className="flex gap-4 mt-2 px-2">
-          <div className="flex gap-6">
+        <div className="flex px-2">
+          <div className="flex gap-3">
             <button 
               type="button"
               className={`${buttonBaseClasses} text-white/60 hover:text-white`}
@@ -95,7 +95,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             </button>
           </div>
 
-          <div className="flex gap-4 ml-auto">
+          <div className="flex gap-3 ml-auto">
             {isSupported && (
               <button 
                 type="button"
