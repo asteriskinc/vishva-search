@@ -16,17 +16,26 @@ export function AuthButton({ user }: { user: any }) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={user.image} alt={user.name} />
-              <AvatarFallback>{user.name?.[0]}</AvatarFallback>
-            </Avatar>
+          <Button 
+            variant="ghost" 
+            className="relative flex items-center gap-2 rounded-full backdrop-blur-xl bg-black/30 border border-white/20 px-4 h-12"
+          >
+            <span className="text-white/90">{user.name?.split(' ')[0]}</span>
+            <div className="h-8 w-8 rounded-full overflow-hidden">
+              <Avatar className="h-full w-full">
+                <AvatarImage src={user.image} alt={user.name} />
+                <AvatarFallback>{user.name?.[0]}</AvatarFallback>
+              </Avatar>
+            </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="backdrop-blur-xl bg-black/20 border-white/20">
+        <DropdownMenuContent 
+          align="end" 
+          className="backdrop-blur-xl bg-black/20 border-white/20"
+        >
           <form action={signOutAction}>
             <DropdownMenuItem asChild>
-              <button className="w-full flex items-center gap-2 text-white/90 cursor-pointer">
+              <button className="rounded-full w-full flex items-center gap-2 text-white/90 cursor-pointer">
                 <LogOut className="h-4 w-4" />
                 Sign Out
               </button>
@@ -41,7 +50,7 @@ export function AuthButton({ user }: { user: any }) {
     <form action={signInWithGoogle}>
       <Button 
         type="submit"
-        className="backdrop-blur-xl bg-black/10 hover:bg-white/20 text-white/90 border border-white/20 flex items-center gap-2"
+        className="rounded-full backdrop-blur-xl bg-black/10 hover:bg-black/20 text-white/90 border border-white/20 flex items-center gap-2 h-10 px-4"
       >
         <LogIn className="h-4 w-4" />
         Sign In
