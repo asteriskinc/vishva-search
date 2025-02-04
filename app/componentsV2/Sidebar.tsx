@@ -67,16 +67,15 @@ const Sidebar = () => {
             </Button>
           </div>
 
-          {/* History Glass Section */}
+          {/* History Section - Updated */}
           {!isCollapsed && (
-            <div className="mt-4 flex-grow">
-              <div 
-                className="p-4 rounded-lg bg-black/30 backdrop-blur-md w-full max-w-none -mr-4 flex flex-col h-full border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
-              >
-                <div className="w-full text-center text-white/90 font-semibold">History</div>
-                <div className="flex-grow flex items-center justify-center">
-                  <div className="text-white/70 text-sm">No chats yet</div>
-                </div>
+            <div className="mt-6 flex-grow">
+              <div className="px-2">
+                <h2 className="text-white/70 font-semibold mb-2">History</h2>
+                <div className="h-px bg-white/20 w-full mb-4" />
+              </div>
+              <div className="flex-grow flex items-center justify-center">
+                <div className="text-white/70 text-sm">No tasks yet</div>
               </div>
             </div>
           )}
